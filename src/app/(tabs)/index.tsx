@@ -3,7 +3,7 @@ import { StyleSheet, Text, View } from "react-native";
 export default function TabOneScreen() {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Luxury Marketplace</Text>
+      <Text style={styles.title}>Zona Pits app</Text>
     </View>
   );
 }
@@ -15,9 +15,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   title: {
-    fontSize: 20,
+    fontSize: 32,
     fontWeight: "bold",
-    color: "white",
+    color: "black",
   },
   separator: {
     marginVertical: 30,

@@ -9,8 +9,10 @@ import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 import "react-native-reanimated";
+import { PaperProvider } from "react-native-paper";
 
 import { useColorScheme } from "@/components/useColorScheme";
+import { paperDarkTheme, paperLightTheme } from "@/theme/paperTheme";
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -30,6 +32,8 @@ export default function RootLayout() {
     SpaceMono: require("../../assets/fonts/SpaceMono-Regular.ttf"),
     ...FontAwesome.font,
   });
+  const colorScheme = useColorScheme();
+  const paperTheme = colorScheme === "dark" ? paperDarkTheme : paperLightTheme;
 
   // Expo Router uses Error Boundaries to catch errors in the navigation tree.
   useEffect(() => {
@@ -46,7 +50,11 @@ export default function RootLayout() {
     return null;
   }
 
-  return <RootLayoutNav />;
+  return (
+    <PaperProvider theme={paperTheme}>
+      <RootLayoutNav />
+    </PaperProvider>
+  );
 }
 
 function RootLayoutNav() {
