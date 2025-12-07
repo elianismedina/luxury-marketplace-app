@@ -1,4 +1,4 @@
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
 import {
@@ -16,12 +16,19 @@ type AuthTab = "login" | "register";
 
 export default function AuthScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ tab?: string }>();
   const { user, initializing, loading, isConfigured, login, register, logout } =
     useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [activeTab, setActiveTab] = useState<AuthTab>("login");
+
+  useEffect(() => {
+    if (params.tab === "register" || params.tab === "login") {
+      setActiveTab(params.tab);
+    }
+  }, [params.tab]);
 
   useEffect(() => {
     if (!initializing && user) {
