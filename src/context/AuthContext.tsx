@@ -21,6 +21,12 @@ type AuthContextValue = {
   register: (email: string, password: string, name: string) => Promise<void>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
+  recoverPassword: (email: string, redirectUrl: string) => Promise<void>;
+  confirmPasswordReset: (
+    userId: string,
+    secret: string,
+    newPassword: string
+  ) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -110,6 +116,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const recoverPassword = useCallback(
+    async (email: string, redirectUrl: string) => {
+      if (!isAppwriteConfigured) {
+        throw new Error("Appwrite no está configurado");
+      }
+
+      setLoading(true);
+      try {
+        await account.createRecovery(email.trim(), redirectUrl);
+      } catch (error) {
+        throw error;
+      } finally {
+        setLoading(false);
+      }
+    },
+    []
+  );
+
+  const confirmPasswordReset = useCallback(
+    async (userId: string, secret: string, newPassword: string) => {
+      if (!isAppwriteConfigured) {
+        throw new Error("Appwrite no está configurado");
+      }
+
+      setLoading(true);
+      try {
+        await account.updateRecovery(userId, secret, newPassword, newPassword);
+      } catch (error) {
+        throw error;
+      } finally {
+        setLoading(false);
+      }
+    },
+    []
+  );
+
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
@@ -120,8 +162,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       register,
       logout,
       refresh,
+      recoverPassword,
+      confirmPasswordReset,
     }),
-    [user, initializing, loading, login, register, logout, refresh]
+    [
+      user,
+      initializing,
+      loading,
+      login,
+      register,
+      logout,
+      refresh,
+      recoverPassword,
+      confirmPasswordReset,
+    ]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

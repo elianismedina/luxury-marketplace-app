@@ -4,7 +4,9 @@ import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
 import {
   ActivityIndicator,
   Button,
+  Checkbox,
   HelperText,
+  ProgressBar,
   SegmentedButtons,
   TextInput,
 } from "react-native-paper";
@@ -14,15 +16,56 @@ import { useAuth } from "@/context/AuthContext";
 
 type AuthTab = "login" | "register";
 
+type PasswordStrength = {
+  score: number; // 0-4
+  label: string;
+  color: string;
+};
+
+const validateEmail = (email: string): boolean => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
+
+const getPasswordStrength = (password: string): PasswordStrength => {
+  let score = 0;
+  if (password.length >= 8) score++;
+  if (password.length >= 12) score++;
+  if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score++;
+  if (/\d/.test(password)) score++;
+  if (/[^a-zA-Z0-9]/.test(password)) score++;
+
+  const labels = ["Muy débil", "Débil", "Aceptable", "Fuerte", "Muy fuerte"];
+  const colors = ["#f44336", "#ff9800", "#ffeb3b", "#8bc34a", "#4caf50"];
+
+  return {
+    score: Math.min(score, 4),
+    label: labels[Math.min(score, 4)],
+    color: colors[Math.min(score, 4)],
+  };
+};
+
 export default function AuthScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ tab?: string }>();
-  const { user, initializing, loading, isConfigured, login, register, logout } =
-    useAuth();
+  const {
+    user,
+    initializing,
+    loading,
+    isConfigured,
+    login,
+    register,
+    logout,
+    recoverPassword,
+  } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [activeTab, setActiveTab] = useState<AuthTab>("login");
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
+  const [emailTouched, setEmailTouched] = useState(false);
+  const [passwordTouched, setPasswordTouched] = useState(false);
 
   useEffect(() => {
     if (params.tab === "register" || params.tab === "login") {
@@ -36,15 +79,30 @@ export default function AuthScreen() {
     }
   }, [initializing, user, router]);
 
+  const isEmailValid = useMemo(() => validateEmail(email), [email]);
+  const passwordStrength = useMemo(
+    () => getPasswordStrength(password),
+    [password]
+  );
+
   const loginDisabled = useMemo(
     () =>
       activeTab !== "login" ||
       !isConfigured ||
       !email.trim() ||
       !password.trim() ||
+      !isEmailValid ||
       loading ||
       initializing,
-    [activeTab, isConfigured, email, password, loading, initializing]
+    [
+      activeTab,
+      isConfigured,
+      email,
+      password,
+      isEmailValid,
+      loading,
+      initializing,
+    ]
   );
 
   const registerDisabled = useMemo(
@@ -54,21 +112,75 @@ export default function AuthScreen() {
       !email.trim() ||
       !password.trim() ||
       !name.trim() ||
+      !isEmailValid ||
+      passwordStrength.score < 2 ||
       loading ||
       initializing,
-    [activeTab, isConfigured, email, password, name, loading, initializing]
+    [
+      activeTab,
+      isConfigured,
+      email,
+      password,
+      name,
+      isEmailValid,
+      passwordStrength.score,
+      loading,
+      initializing,
+    ]
   );
+
+  const handleForgotPassword = useCallback(async () => {
+    if (!email.trim()) {
+      Alert.alert(
+        "Email requerido",
+        "Por favor ingresa tu email para recuperar tu contraseña."
+      );
+      return;
+    }
+    if (!isEmailValid) {
+      Alert.alert("Email inválido", "Por favor ingresa un email válido.");
+      return;
+    }
+
+    try {
+      // URL temporal para desarrollo - Appwrite envía el email con userId y secret como parámetros
+      // En producción: registra tu deep link en Appwrite Console → Settings → Platforms
+      const redirectUrl = "https://cloud.appwrite.io/v1/account/recovery";
+      await recoverPassword(email, redirectUrl);
+      Alert.alert(
+        "Email enviado",
+        `Hemos enviado un enlace de recuperación a ${email}.\n\n1. Revisa tu correo\n2. Abre el enlace en el email\n3. Copia el userId y secret de la URL\n4. Usa el botón "Ya tengo el código" abajo`,
+        [
+          { text: "OK" },
+          {
+            text: "Ya tengo el código",
+            onPress: () => router.push("/reset-password"),
+          },
+        ]
+      );
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "No se pudo enviar el email de recuperación.";
+      Alert.alert("Error", message);
+    }
+  }, [email, isEmailValid, recoverPassword]);
 
   const handleLogin = useCallback(async () => {
     try {
       await login(email, password);
+      if (rememberMe) {
+        // TODO: Guardar preferencia de sesión persistente
+        console.log("Remember me enabled");
+      }
       Alert.alert("Login exitoso", "Sesión iniciada correctamente.");
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "No se pudo iniciar sesión.";
       Alert.alert("Error al iniciar sesión", message);
     }
-  }, [login, email, password]);
+  }, [login, email, password, rememberMe]);
 
   const handleRegister = useCallback(async () => {
     try {
@@ -145,36 +257,113 @@ export default function AuthScreen() {
           />
 
           <View style={styles.form}>
-            <TextInput
-              placeholder="Email"
-              value={email}
-              onChangeText={setEmail}
-              autoCapitalize="none"
-              keyboardType="email-address"
-              autoComplete="email"
-              mode="outlined"
-              style={styles.input}
-            />
-            <TextInput
-              placeholder="Password"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              autoCapitalize="none"
-              autoComplete="password"
-              mode="outlined"
-              style={styles.input}
-            />
+            <View>
+              <TextInput
+                label="Email"
+                placeholder="tu@email.com"
+                value={email}
+                onChangeText={setEmail}
+                onBlur={() => setEmailTouched(true)}
+                autoCapitalize="none"
+                keyboardType="email-address"
+                autoComplete="email"
+                mode="outlined"
+                style={styles.input}
+                error={emailTouched && email.length > 0 && !isEmailValid}
+                left={<TextInput.Icon icon="email" />}
+              />
+              {emailTouched && email.length > 0 && !isEmailValid && (
+                <HelperText type="error" visible>
+                  Por favor ingresa un email válido
+                </HelperText>
+              )}
+              {emailTouched && isEmailValid && (
+                <HelperText type="info" visible style={styles.successText}>
+                  ✓ Email válido
+                </HelperText>
+              )}
+            </View>
+
+            <View>
+              <TextInput
+                label="Contraseña"
+                placeholder="Mínimo 8 caracteres"
+                value={password}
+                onChangeText={setPassword}
+                onBlur={() => setPasswordTouched(true)}
+                secureTextEntry={!showPassword}
+                autoCapitalize="none"
+                autoComplete="password"
+                mode="outlined"
+                style={styles.input}
+                left={<TextInput.Icon icon="lock" />}
+                right={
+                  <TextInput.Icon
+                    icon={showPassword ? "eye-off" : "eye"}
+                    onPress={() => setShowPassword(!showPassword)}
+                  />
+                }
+              />
+              {activeTab === "register" &&
+                passwordTouched &&
+                password.length > 0 && (
+                  <View style={styles.passwordStrength}>
+                    <View style={styles.strengthHeader}>
+                      <Text style={styles.strengthLabel}>
+                        Fortaleza: {passwordStrength.label}
+                      </Text>
+                    </View>
+                    <ProgressBar
+                      progress={(passwordStrength.score + 1) / 5}
+                      color={passwordStrength.color}
+                      style={styles.progressBar}
+                    />
+                    <HelperText type="info" visible>
+                      {passwordStrength.score < 2
+                        ? "Usa mayúsculas, minúsculas, números y símbolos"
+                        : "Contraseña segura"}
+                    </HelperText>
+                  </View>
+                )}
+            </View>
+
             {activeTab === "register" ? (
               <TextInput
-                placeholder="Name"
+                label="Nombre completo"
+                placeholder="Tu nombre"
                 value={name}
                 onChangeText={setName}
                 autoCapitalize="words"
                 mode="outlined"
                 style={styles.input}
+                left={<TextInput.Icon icon="account" />}
               />
             ) : null}
+
+            {activeTab === "login" && (
+              <View style={styles.loginOptions}>
+                <View style={styles.checkboxContainer}>
+                  <Checkbox.Android
+                    status={rememberMe ? "checked" : "unchecked"}
+                    onPress={() => setRememberMe(!rememberMe)}
+                  />
+                  <Text
+                    style={styles.checkboxLabel}
+                    onPress={() => setRememberMe(!rememberMe)}
+                  >
+                    Mantenerme conectado
+                  </Text>
+                </View>
+                <Button
+                  mode="text"
+                  onPress={handleForgotPassword}
+                  compact
+                  style={styles.forgotButton}
+                >
+                  ¿Olvidaste tu contraseña?
+                </Button>
+              </View>
+            )}
 
             {activeTab === "login" ? (
               <Button
@@ -263,5 +452,42 @@ const styles = StyleSheet.create({
   },
   button: {
     marginTop: 4,
+  },
+  successText: {
+    color: "#4caf50",
+  },
+  passwordStrength: {
+    marginTop: 8,
+    gap: 4,
+  },
+  strengthHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  strengthLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  progressBar: {
+    height: 6,
+    borderRadius: 3,
+  },
+  loginOptions: {
+    gap: 8,
+    marginTop: 4,
+  },
+  checkboxContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginLeft: -8,
+  },
+  checkboxLabel: {
+    fontSize: 14,
+    marginLeft: 4,
+  },
+  forgotButton: {
+    alignSelf: "flex-start",
+    marginLeft: -8,
   },
 });
