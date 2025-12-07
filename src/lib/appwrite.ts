@@ -1,5 +1,11 @@
 import Constants from "expo-constants";
-import { Account, Avatars, Client } from "react-native-appwrite";
+import {
+  Account,
+  Avatars,
+  Client,
+  Databases,
+  Storage,
+} from "react-native-appwrite";
 
 const endpoint =
   process.env.EXPO_PUBLIC_APPWRITE_ENDPOINT ??
@@ -12,6 +18,14 @@ const projectId =
 const platform =
   process.env.EXPO_PUBLIC_APPWRITE_PLATFORM ??
   Constants.expoConfig?.extra?.appwritePlatform ??
+  "";
+const databaseId =
+  process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID ??
+  Constants.expoConfig?.extra?.appwriteDatabaseId ??
+  "";
+const bucketId =
+  process.env.EXPO_PUBLIC_APPWRITE_BUCKET_VEHICULOS_ID ??
+  Constants.expoConfig?.extra?.appwriteBucketVehiculosId ??
   "";
 
 export const isAppwriteConfigured = Boolean(endpoint && projectId && platform);
@@ -41,6 +55,10 @@ if (platform) {
 
 export const account = new Account(client);
 export const avatars = new Avatars(client);
+export const databases = new Databases(client);
+export const storage = new Storage(client);
+
+export { bucketId, databaseId, endpoint, projectId };
 
 export async function getLoggedInUser() {
   try {

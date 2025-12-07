@@ -1,7 +1,7 @@
-import { StyleSheet, View } from "react-native";
-import { useCallback } from "react";
-import { Button, Card, Paragraph, Title } from "react-native-paper";
 import { useRouter } from "expo-router";
+import { useCallback } from "react";
+import { StyleSheet, View } from "react-native";
+import { Button, Card, Paragraph, Title } from "react-native-paper";
 
 import { useAuth } from "@/context/AuthContext";
 
@@ -11,7 +11,7 @@ export default function TabFiveScreen() {
 
   const handleLogout = useCallback(async () => {
     await logout();
-    router.replace("/login");
+    router.replace("/welcome");
   }, [logout, router]);
 
   return (
