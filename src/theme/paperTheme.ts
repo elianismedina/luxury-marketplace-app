@@ -115,14 +115,30 @@ export const paperDarkTheme: MD3Theme = {
     secondaryContainer: "#0044AA",
     onSecondaryContainer: "#E5F0FF",
     tertiary: "#FF6666",
-    onTertiary: "#000000",
-    background: "#1F2937",
-    surface: "#1c1b1f",
-    onSurface: "#F9FAFB",
-    surfaceVariant: "#374151",
-    outline: "#6B7280",
+    onTertiary: "#ffffff",
+    background: "#121212",
+    surface: "#2A2A2A", // Lighter surface for better input contrast
+    onSurface: "#FFFFFF", // Pure white text for maximum readability
+    surfaceVariant: "#3A3A3A", // Lighter variant for input backgrounds
+    onSurfaceVariant: "#E0E0E0", // Light gray for placeholder/label text
+    outline: "#8E8E8E", // Lighter outline for input borders
+    outlineVariant: "#4A4A4A",
+    inverseSurface: "#E8E8E8",
+    inverseOnSurface: "#121212",
+    inversePrimary: "#FF0000",
+    elevation: {
+      level0: "transparent",
+      level1: "#2A2A2A",
+      level2: "#303030",
+      level3: "#363636",
+      level4: "#3A3A3A",
+      level5: "#404040",
+    },
+    surfaceDisabled: "rgba(255, 255, 255, 0.12)",
+    onSurfaceDisabled: "rgba(255, 255, 255, 0.38)",
+    backdrop: "rgba(0, 0, 0, 0.4)",
     error: "#F87171",
-    onError: "#ffffff",
+    onError: "#000000",
   },
   fonts: customFonts,
 };

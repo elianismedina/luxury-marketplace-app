@@ -240,7 +240,7 @@ export default function TabFourScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: "#121212",
   },
   centerContainer: {
     flex: 1,
@@ -292,7 +292,7 @@ const styles = StyleSheet.create({
     height: 60,
   },
   placeholderCircle: {
-    backgroundColor: "#e0e0e0",
+    backgroundColor: "#2A2A2A",
     justifyContent: "center",
     alignItems: "center",
   },

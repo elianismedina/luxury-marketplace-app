@@ -278,6 +278,10 @@ export default function AuthScreen() {
                 autoComplete="email"
                 mode="outlined"
                 style={styles.input}
+                textColor="#FFFFFF"
+                outlineColor="#8E8E8E"
+                activeOutlineColor="#FF3333"
+                placeholderTextColor="#9CA3AF"
                 error={emailTouched && email.length > 0 && !isEmailValid}
                 left={<TextInput.Icon icon="email" />}
               />
@@ -305,6 +309,10 @@ export default function AuthScreen() {
                 autoComplete="password"
                 mode="outlined"
                 style={styles.input}
+                textColor="#FFFFFF"
+                outlineColor="#8E8E8E"
+                activeOutlineColor="#FF3333"
+                placeholderTextColor="#9CA3AF"
                 left={<TextInput.Icon icon="lock" />}
                 right={
                   <TextInput.Icon
@@ -345,6 +353,10 @@ export default function AuthScreen() {
                 autoCapitalize="words"
                 mode="outlined"
                 style={styles.input}
+                textColor="#FFFFFF"
+                outlineColor="#8E8E8E"
+                activeOutlineColor="#FF3333"
+                placeholderTextColor="#9CA3AF"
                 left={<TextInput.Icon icon="account" />}
               />
             ) : null}
@@ -468,7 +480,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   input: {
-    backgroundColor: "white",
+    backgroundColor: "#2A2A2A",
   },
   button: {
     marginTop: 4,

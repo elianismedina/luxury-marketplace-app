@@ -15,15 +15,15 @@ export const theme = {
     secondaryFaded: "rgba(0, 85, 212, 0.1)",
 
     // Neutral colors
-    background: "#FFFFFF",
-    backgroundSecondary: "#F9FAFB",
-    surface: "#FFFFFF",
-    surfaceVariant: "#F3F4F6",
+    background: "#121212",
+    backgroundSecondary: "#1E1E1E",
+    surface: "#2A2A2A",
+    surfaceVariant: "#3A3A3A",
 
     // Text colors
-    text: "#1F2937",
-    textSecondary: "#6B7280",
-    textDisabled: "#9CA3AF",
+    text: "#FFFFFF",
+    textSecondary: "#9CA3AF",
+    textDisabled: "#6B7280",
     textOnPrimary: "#FFFFFF",
     textOnSecondary: "#FFFFFF",
 
@@ -38,9 +38,9 @@ export const theme = {
     infoLight: "#60A5FA",
 
     // Border colors
-    border: "#E5E7EB",
-    borderLight: "#F3F4F6",
-    borderDark: "#D1D5DB",
+    border: "#4A4A4A",
+    borderLight: "#3A3A3A",
+    borderDark: "#6B7280",
 
     // Interactive states
     hover: "rgba(255, 0, 0, 0.08)",

@@ -204,7 +204,7 @@ export default function TabTwoScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#f9fafb",
+    backgroundColor: "#121212",
   },
   container: {
     flex: 1,
@@ -231,7 +231,7 @@ const styles = StyleSheet.create({
   },
   suggestions: {
     alignSelf: "stretch",
-    backgroundColor: "#fff",
+    backgroundColor: "#2A2A2A",
     borderRadius: 12,
     padding: 20,
     gap: 8,
@@ -263,23 +263,23 @@ const styles = StyleSheet.create({
   },
   assistantBubble: {
     alignSelf: "flex-start",
-    backgroundColor: "#fff",
+    backgroundColor: "#2A2A2A",
     borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: "#4A4A4A",
   },
   userText: {
     color: "#fff",
     fontSize: 16,
   },
   assistantText: {
-    color: "#1f2937",
+    color: "#FFFFFF",
     fontSize: 16,
   },
   inputContainer: {
     padding: 16,
-    backgroundColor: "#fff",
+    backgroundColor: "#1E1E1E",
     borderTopWidth: 1,
-    borderTopColor: "#e5e7eb",
+    borderTopColor: "#4A4A4A",
     gap: 12,
   },
   inputRow: {
@@ -289,11 +289,11 @@ const styles = StyleSheet.create({
   },
   attachButton: {
     margin: 0,
-    backgroundColor: "#f3f4f6",
+    backgroundColor: "#2A2A2A",
   },
   input: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#2A2A2A",
     maxHeight: 120,
   },
   imagePreviewContainer: {

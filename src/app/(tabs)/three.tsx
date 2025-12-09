@@ -411,7 +411,7 @@ export default function TabThreeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: "#121212",
   },
   scrollContent: {
     padding: 20,
@@ -439,7 +439,7 @@ const styles = StyleSheet.create({
     width: "100%",
     height: 200,
     borderRadius: 12,
-    backgroundColor: "#e0e0e0",
+    backgroundColor: "#2A2A2A",
   },
   removeImageButton: {
     position: "absolute",
@@ -456,7 +456,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   input: {
-    backgroundColor: "white",
+    backgroundColor: "#2A2A2A",
   },
   button: {
     marginTop: 16,
