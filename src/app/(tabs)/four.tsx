@@ -9,6 +9,7 @@ import {
 import { Query } from "react-native-appwrite";
 import { ActivityIndicator, Card, Chip, Text } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useTheme } from "styled-components/native";
 
 import { useAuth } from "@/context/AuthContext";
 import {
@@ -43,12 +44,24 @@ const VehicleImage = ({
   imageUrl: string | null;
   marca: string;
 }) => {
+  const theme = useTheme();
   const [imageError, setImageError] = useState(false);
 
   if (!imageUrl || imageError) {
     return (
-      <View style={[styles.imageCircle, styles.placeholderCircle]}>
-        <Text variant="titleLarge" style={styles.placeholderText}>
+      <View
+        style={[
+          styles.imageCircle,
+          {
+            backgroundColor: theme.colors.primaryFaded,
+            borderColor: theme.colors.primary,
+          },
+        ]}
+      >
+        <Text
+          variant="titleLarge"
+          style={[styles.placeholderText, { color: theme.colors.primary }]}
+        >
           {marca.charAt(0)}
         </Text>
       </View>
@@ -132,7 +145,13 @@ export default function TabFourScreen() {
                 </Text>
               </View>
             </View>
-            <Chip mode="outlined">{item.modelo}</Chip>
+            <Chip
+              mode="outlined"
+              style={{ borderColor: theme.colors.secondary }}
+              textStyle={{ color: theme.colors.secondary }}
+            >
+              {item.modelo}
+            </Chip>
           </View>
           <View style={styles.details}>
             <View style={styles.detailRow}>
@@ -159,10 +178,12 @@ export default function TabFourScreen() {
     );
   };
 
+  const theme = useTheme();
+
   if (loading) {
     return (
       <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator size="large" color={theme.colors.primary} />
         <Text variant="bodyLarge" style={styles.loadingText}>
           Cargando vehículos...
         </Text>

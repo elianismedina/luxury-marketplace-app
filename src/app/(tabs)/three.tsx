@@ -247,6 +247,8 @@ export default function TabThreeScreen() {
               icon="camera"
               disabled={loading}
               style={styles.imageButton}
+              buttonColor={theme.colors.secondaryContainer}
+              textColor={theme.colors.secondary}
             >
               Seleccionar imagen
             </Button>
@@ -396,6 +398,7 @@ export default function TabThreeScreen() {
             disabled={loading}
             style={styles.button}
             contentStyle={styles.buttonContent}
+            buttonColor={theme.colors.secondary}
           >
             {loading ? "Guardando..." : "Registrar Vehículo"}
           </Button>

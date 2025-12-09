@@ -11,10 +11,12 @@ import { useEffect } from "react";
 import { ActivityIndicator, View } from "react-native";
 import { PaperProvider } from "react-native-paper";
 import "react-native-reanimated";
+import { ThemeProvider as StyledThemeProvider } from "styled-components/native";
 
 import { useColorScheme } from "@/components/useColorScheme";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { paperDarkTheme, paperLightTheme } from "@/theme/paperTheme";
+import { theme } from "@/theme/theme";
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -53,11 +55,13 @@ export default function RootLayout() {
   }
 
   return (
-    <PaperProvider theme={paperTheme}>
-      <AuthProvider>
-        <RootLayoutNav />
-      </AuthProvider>
-    </PaperProvider>
+    <StyledThemeProvider theme={theme}>
+      <PaperProvider theme={paperTheme}>
+        <AuthProvider>
+          <RootLayoutNav />
+        </AuthProvider>
+      </PaperProvider>
+    </StyledThemeProvider>
   );
 }
 

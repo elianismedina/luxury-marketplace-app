@@ -1,6 +1,6 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, Image, ScrollView, StyleSheet, Text, View } from "react-native";
 import {
   ActivityIndicator,
   Button,
@@ -13,6 +13,8 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useAuth } from "@/context/AuthContext";
+
+const logoImage = require("../../assets/images/zonaPitsLogo2.png");
 
 type AuthTab = "login" | "register";
 
@@ -221,8 +223,15 @@ export default function AuthScreen() {
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.root}>
+          <View style={styles.logoContainer}>
+            <Image
+              source={logoImage}
+              style={styles.logo}
+              resizeMode="contain"
+            />
+          </View>
+
           <View style={styles.statusHeader}>
-            <Text style={styles.heading}>Zona Pits App</Text>
             {user ? (
               <Text style={styles.statusText}>
                 {`Sesión iniciada como ${user.name || user.email}`}
@@ -359,6 +368,7 @@ export default function AuthScreen() {
                   onPress={handleForgotPassword}
                   compact
                   style={styles.forgotButton}
+                  textColor="#0055D4"
                 >
                   ¿Olvidaste tu contraseña?
                 </Button>
@@ -382,6 +392,7 @@ export default function AuthScreen() {
                 disabled={registerDisabled}
                 loading={loading}
                 style={styles.button}
+                buttonColor="#0055D4"
               >
                 Registrarse
               </Button>
@@ -423,6 +434,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  logoContainer: {
+    alignItems: "center",
+    marginBottom: 8,
+    gap: 12,
+  },
+  logo: {
+    width: 120,
+    height: 120,
+  },
   statusHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -430,9 +450,9 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   heading: {
-    flex: 1,
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: "800",
+    color: "#FF0000",
   },
   statusText: {
     fontSize: 16,

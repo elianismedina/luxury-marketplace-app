@@ -6,8 +6,6 @@ import {
   type MD3Theme,
 } from "react-native-paper";
 
-import Colors from "@/constants/Colors";
-
 const fontFamily = Platform.select({
   ios: "SpaceMono",
   android: "SpaceMono",
@@ -83,17 +81,23 @@ export const paperLightTheme: MD3Theme = {
   ...MD3LightTheme,
   colors: {
     ...MD3LightTheme.colors,
-    primary: Colors.light.tint,
+    primary: "#FF0000", // Primary red
     onPrimary: "#ffffff",
-    secondary: "#c67c4e",
+    primaryContainer: "#FFE5E5",
+    onPrimaryContainer: "#CC0000",
+    secondary: "#0055D4", // Secondary blue
     onSecondary: "#ffffff",
-    tertiary: "#ffb703",
-    onTertiary: "#261400",
-    background: Colors.light.background,
-    surface: "#f9f6f1",
-    onSurface: Colors.light.text,
-    surfaceVariant: "#f0e6d8",
-    outline: "#8c7c65",
+    secondaryContainer: "#E5F0FF",
+    onSecondaryContainer: "#0044AA",
+    tertiary: "#FF3333",
+    onTertiary: "#ffffff",
+    background: "#FFFFFF",
+    surface: "#FFFFFF",
+    onSurface: "#1F2937",
+    surfaceVariant: "#F9FAFB",
+    outline: "#E5E7EB",
+    error: "#EF4444",
+    onError: "#ffffff",
   },
   fonts: customFonts,
 };
@@ -102,17 +106,23 @@ export const paperDarkTheme: MD3Theme = {
   ...MD3DarkTheme,
   colors: {
     ...MD3DarkTheme.colors,
-    primary: Colors.dark.tint,
-    onPrimary: "#000000",
-    secondary: "#f4a460",
-    onSecondary: "#301200",
-    tertiary: "#ffb703",
-    onTertiary: "#261400",
-    background: Colors.dark.background,
+    primary: "#FF3333", // Primary red (lighter for dark mode)
+    onPrimary: "#ffffff",
+    primaryContainer: "#CC0000",
+    onPrimaryContainer: "#FFE5E5",
+    secondary: "#3377E6", // Secondary blue (lighter for dark mode)
+    onSecondary: "#ffffff",
+    secondaryContainer: "#0044AA",
+    onSecondaryContainer: "#E5F0FF",
+    tertiary: "#FF6666",
+    onTertiary: "#000000",
+    background: "#1F2937",
     surface: "#1c1b1f",
-    onSurface: Colors.dark.text,
-    surfaceVariant: "#3b3226",
-    outline: "#cfc2b3",
+    onSurface: "#F9FAFB",
+    surfaceVariant: "#374151",
+    outline: "#6B7280",
+    error: "#F87171",
+    onError: "#ffffff",
   },
   fonts: customFonts,
 };
