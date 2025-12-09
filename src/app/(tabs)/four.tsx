@@ -1,13 +1,23 @@
+import { useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
+  Alert,
   FlatList,
   Image,
   RefreshControl,
   StyleSheet,
+  TouchableOpacity,
   View,
 } from "react-native";
 import { Query } from "react-native-appwrite";
-import { ActivityIndicator, Card, Chip, Text } from "react-native-paper";
+import {
+  ActivityIndicator,
+  Card,
+  Checkbox,
+  Chip,
+  Snackbar,
+  Text,
+} from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme } from "styled-components/native";
 
@@ -19,6 +29,7 @@ import {
   endpoint,
   isAppwriteConfigured,
   projectId,
+  storage,
 } from "@/lib/appwrite";
 
 const VEHICULOS_COLLECTION_ID =
@@ -84,9 +95,16 @@ const VehicleImage = ({
 
 export default function TabFourScreen() {
   const { user } = useAuth();
+  const router = useRouter();
   const [vehiculos, setVehiculos] = useState<Vehiculo[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedVehiculos, setSelectedVehiculos] = useState<Set<string>>(
+    new Set()
+  );
+  const [snackbarVisible, setSnackbarVisible] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
 
   const loadVehiculos = useCallback(async () => {
     if (!isAppwriteConfigured || !user) {
@@ -127,54 +145,175 @@ export default function TabFourScreen() {
     return url;
   };
 
+  const toggleSelection = (id: string) => {
+    const newSelected = new Set(selectedVehiculos);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedVehiculos(newSelected);
+  };
+
+  const handleDelete = useCallback(async () => {
+    if (selectedVehiculos.size === 0) {
+      Alert.alert("Error", "No hay vehículos seleccionados");
+      return;
+    }
+
+    Alert.alert(
+      "Confirmar eliminación",
+      `¿Estás seguro de eliminar ${selectedVehiculos.size} vehículo(s)?`,
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Eliminar",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              setLoading(true);
+
+              // Eliminar cada vehículo seleccionado
+              for (const vehiculoId of selectedVehiculos) {
+                const vehiculo = vehiculos.find((v) => v.$id === vehiculoId);
+
+                // Eliminar imagen si existe
+                if (vehiculo?.imageId) {
+                  try {
+                    await storage.deleteFile(bucketId, vehiculo.imageId);
+                  } catch (error) {
+                    console.error("Error al eliminar imagen:", error);
+                  }
+                }
+
+                // Eliminar documento
+                await databases.deleteDocument(
+                  databaseId,
+                  VEHICULOS_COLLECTION_ID,
+                  vehiculoId
+                );
+              }
+
+              setSnackbarMessage(
+                `✓ ${selectedVehiculos.size} vehículo(s) eliminado(s)`
+              );
+              setSnackbarVisible(true);
+              setSelectedVehiculos(new Set());
+              setSelectionMode(false);
+              await loadVehiculos();
+            } catch (error) {
+              console.error("Error al eliminar:", error);
+              Alert.alert("Error", "No se pudieron eliminar los vehículos");
+            } finally {
+              setLoading(false);
+            }
+          },
+        },
+      ]
+    );
+  }, [selectedVehiculos, vehiculos, loadVehiculos]);
+
+  const handleEdit = useCallback(() => {
+    if (selectedVehiculos.size === 0) {
+      Alert.alert("Error", "No hay vehículos seleccionados");
+      return;
+    }
+
+    if (selectedVehiculos.size > 1) {
+      Alert.alert("Error", "Solo puedes editar un vehículo a la vez");
+      return;
+    }
+
+    const vehiculoId = Array.from(selectedVehiculos)[0];
+    setSelectedVehiculos(new Set());
+    setSelectionMode(false);
+    router.push(`/edit-vehicle?id=${vehiculoId}`);
+  }, [selectedVehiculos, router]);
+
+  // Exponer funciones globalmente para que el navbar pueda acceder
+  useEffect(() => {
+    (global as any).handleDeleteVehiculos = handleDelete;
+    (global as any).handleEditVehiculo = handleEdit;
+    (global as any).selectionMode = selectionMode;
+
+    return () => {
+      delete (global as any).handleDeleteVehiculos;
+      delete (global as any).handleEditVehiculo;
+      delete (global as any).selectionMode;
+    };
+  }, [handleDelete, handleEdit, selectionMode]);
+
   const renderVehiculo = ({ item }: { item: Vehiculo }) => {
     const imageUrl = getImageUrl(item.imageId);
+    const isSelected = selectedVehiculos.has(item.$id);
 
     return (
-      <Card style={styles.card}>
-        <Card.Content>
-          <View style={styles.header}>
-            <View style={styles.headerLeft}>
-              <VehicleImage imageUrl={imageUrl} marca={item.marca} />
-              <View style={styles.headerInfo}>
-                <Text variant="headlineSmall" style={styles.marca}>
-                  {item.marca}
+      <TouchableOpacity
+        onLongPress={() => {
+          if (!selectionMode) {
+            setSelectionMode(true);
+            toggleSelection(item.$id);
+          }
+        }}
+        onPress={() => {
+          if (selectionMode) {
+            toggleSelection(item.$id);
+          }
+        }}
+        activeOpacity={0.7}
+      >
+        <Card style={[styles.card, isSelected && styles.selectedCard]}>
+          <Card.Content>
+            <View style={styles.header}>
+              <View style={styles.headerLeft}>
+                {selectionMode && (
+                  <Checkbox.Android
+                    status={isSelected ? "checked" : "unchecked"}
+                    onPress={() => toggleSelection(item.$id)}
+                    color={theme.colors.primary}
+                  />
+                )}
+                <VehicleImage imageUrl={imageUrl} marca={item.marca} />
+                <View style={styles.headerInfo}>
+                  <Text variant="headlineSmall" style={styles.marca}>
+                    {item.marca}
+                  </Text>
+                  <Text variant="titleMedium" style={styles.linea}>
+                    {item.linea}
+                  </Text>
+                </View>
+              </View>
+              <Chip
+                mode="outlined"
+                style={{ borderColor: theme.colors.secondary }}
+                textStyle={{ color: theme.colors.secondary }}
+              >
+                {item.modelo}
+              </Chip>
+            </View>
+            <View style={styles.details}>
+              <View style={styles.detailRow}>
+                <Text variant="bodyMedium" style={styles.label}>
+                  Motor:
                 </Text>
-                <Text variant="titleMedium" style={styles.linea}>
-                  {item.linea}
+                <Text variant="bodyMedium">{item.motor}</Text>
+              </View>
+              <View style={styles.detailRow}>
+                <Text variant="bodyMedium" style={styles.label}>
+                  Combustible:
                 </Text>
+                <Text variant="bodyMedium">{item.combustible}</Text>
+              </View>
+              <View style={styles.detailRow}>
+                <Text variant="bodyMedium" style={styles.label}>
+                  Transmisión:
+                </Text>
+                <Text variant="bodyMedium">{item.cajacambios}</Text>
               </View>
             </View>
-            <Chip
-              mode="outlined"
-              style={{ borderColor: theme.colors.secondary }}
-              textStyle={{ color: theme.colors.secondary }}
-            >
-              {item.modelo}
-            </Chip>
-          </View>
-          <View style={styles.details}>
-            <View style={styles.detailRow}>
-              <Text variant="bodyMedium" style={styles.label}>
-                Motor:
-              </Text>
-              <Text variant="bodyMedium">{item.motor}</Text>
-            </View>
-            <View style={styles.detailRow}>
-              <Text variant="bodyMedium" style={styles.label}>
-                Combustible:
-              </Text>
-              <Text variant="bodyMedium">{item.combustible}</Text>
-            </View>
-            <View style={styles.detailRow}>
-              <Text variant="bodyMedium" style={styles.label}>
-                Transmisión:
-              </Text>
-              <Text variant="bodyMedium">{item.cajacambios}</Text>
-            </View>
-          </View>
-        </Card.Content>
-      </Card>
+          </Card.Content>
+        </Card>
+      </TouchableOpacity>
     );
   };
 
@@ -233,6 +372,14 @@ export default function TabFourScreen() {
           </View>
         }
       />
+      <Snackbar
+        visible={snackbarVisible}
+        onDismiss={() => setSnackbarVisible(false)}
+        duration={2500}
+        style={styles.snackbar}
+      >
+        {snackbarMessage}
+      </Snackbar>
     </SafeAreaView>
   );
 }
@@ -268,6 +415,10 @@ const styles = StyleSheet.create({
   card: {
     marginBottom: 16,
     elevation: 2,
+  },
+  selectedCard: {
+    borderColor: "#FF0000",
+    borderWidth: 2,
   },
   header: {
     flexDirection: "row",
@@ -333,5 +484,8 @@ const styles = StyleSheet.create({
   emptyText: {
     textAlign: "center",
     opacity: 0.7,
+  },
+  snackbar: {
+    backgroundColor: "#10B981",
   },
 });

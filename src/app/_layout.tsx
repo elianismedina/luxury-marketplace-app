@@ -9,7 +9,7 @@ import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 import { ActivityIndicator, View } from "react-native";
-import { PaperProvider } from "react-native-paper";
+import { IconButton, PaperProvider } from "react-native-paper";
 import "react-native-reanimated";
 import { ThemeProvider as StyledThemeProvider } from "styled-components/native";
 
@@ -91,6 +91,29 @@ function RootLayoutNav() {
         <Stack.Screen name="login" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: "modal" }} />
+        <Stack.Screen
+          name="edit-vehicle"
+          options={{
+            title: "Editar Vehículo",
+            headerStyle: { backgroundColor: theme.colors.primary },
+            headerTintColor: "#FFFFFF",
+            headerTitleStyle: { fontWeight: "bold" },
+            headerRight: () => (
+              <View style={{ flexDirection: "row", marginRight: 8 }}>
+                <IconButton
+                  icon="check"
+                  iconColor="#FFFFFF"
+                  size={26}
+                  onPress={() => {
+                    if ((global as any).handleSaveVehiculo) {
+                      (global as any).handleSaveVehiculo();
+                    }
+                  }}
+                />
+              </View>
+            ),
+          }}
+        />
       </Stack>
     </ThemeProvider>
   );

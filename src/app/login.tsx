@@ -1,6 +1,15 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Alert, Image, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  Alert,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import {
   ActivityIndicator,
   Button,
@@ -8,6 +17,7 @@ import {
   HelperText,
   ProgressBar,
   SegmentedButtons,
+  Snackbar,
   TextInput,
 } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -68,6 +78,9 @@ export default function AuthScreen() {
   const [rememberMe, setRememberMe] = useState(false);
   const [emailTouched, setEmailTouched] = useState(false);
   const [passwordTouched, setPasswordTouched] = useState(false);
+  const [snackbarVisible, setSnackbarVisible] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [shouldRedirect, setShouldRedirect] = useState(false);
 
   useEffect(() => {
     if (params.tab === "register" || params.tab === "login") {
@@ -76,10 +89,17 @@ export default function AuthScreen() {
   }, [params.tab]);
 
   useEffect(() => {
-    if (!initializing && user) {
+    if (!initializing && user && shouldRedirect) {
+      // Delay para permitir que el Snackbar se muestre antes de redirigir
+      const timer = setTimeout(() => {
+        router.replace("/(tabs)");
+      }, 1800);
+      return () => clearTimeout(timer);
+    } else if (!initializing && user && !shouldRedirect) {
+      // Si el usuario ya existía (no es un nuevo login), redirigir inmediatamente
       router.replace("/(tabs)");
     }
-  }, [initializing, user, router]);
+  }, [initializing, user, router, shouldRedirect]);
 
   const isEmailValid = useMemo(() => validateEmail(email), [email]);
   const passwordStrength = useMemo(
@@ -171,13 +191,18 @@ export default function AuthScreen() {
 
   const handleLogin = useCallback(async () => {
     try {
+      setSnackbarMessage("✓ Sesión iniciada correctamente");
+      setSnackbarVisible(true);
+      setShouldRedirect(true);
+
       await login(email, password);
       if (rememberMe) {
         // TODO: Guardar preferencia de sesión persistente
         console.log("Remember me enabled");
       }
-      Alert.alert("Login exitoso", "Sesión iniciada correctamente.");
     } catch (error) {
+      setShouldRedirect(false);
+      setSnackbarVisible(false);
       const message =
         error instanceof Error ? error.message : "No se pudo iniciar sesión.";
       Alert.alert("Error al iniciar sesión", message);
@@ -186,12 +211,14 @@ export default function AuthScreen() {
 
   const handleRegister = useCallback(async () => {
     try {
+      setSnackbarMessage("✓ Cuenta creada correctamente");
+      setSnackbarVisible(true);
+      setShouldRedirect(true);
+
       await register(email, password, name);
-      Alert.alert(
-        "Registro exitoso",
-        "Cuenta creada y sesión iniciada correctamente."
-      );
     } catch (error) {
+      setShouldRedirect(false);
+      setSnackbarVisible(false);
       const message =
         error instanceof Error
           ? error.message
@@ -221,209 +248,223 @@ export default function AuthScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.root}>
-          <View style={styles.logoContainer}>
-            <Image
-              source={logoImage}
-              style={styles.logo}
-              resizeMode="contain"
+      <KeyboardAvoidingView
+        style={styles.keyboardView}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={0}
+      >
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          <View style={styles.root}>
+            <View style={styles.logoContainer}>
+              <Image
+                source={logoImage}
+                style={styles.logo}
+                resizeMode="contain"
+              />
+            </View>
+
+            <View style={styles.statusHeader}>
+              {user ? (
+                <Text style={styles.statusText}>
+                  {`Sesión iniciada como ${user.name || user.email}`}
+                </Text>
+              ) : null}
+              {loading ? <ActivityIndicator size="small" /> : null}
+            </View>
+
+            {!isConfigured ? (
+              <HelperText type="info" visible style={styles.warning}>
+                Appwrite no está configurado. Define las variables de entorno
+                `EXPO_PUBLIC_APPWRITE_*` para activar el login.
+              </HelperText>
+            ) : null}
+
+            <SegmentedButtons
+              style={styles.tabs}
+              value={activeTab}
+              onValueChange={(value) => setActiveTab(value as AuthTab)}
+              buttons={[
+                {
+                  value: "login",
+                  label: "Iniciar sesión",
+                  icon: "login",
+                },
+                {
+                  value: "register",
+                  label: "Registrarse",
+                  icon: "account-plus",
+                },
+              ]}
             />
-          </View>
 
-          <View style={styles.statusHeader}>
-            {user ? (
-              <Text style={styles.statusText}>
-                {`Sesión iniciada como ${user.name || user.email}`}
-              </Text>
-            ) : null}
-            {loading ? <ActivityIndicator size="small" /> : null}
-          </View>
-
-          {!isConfigured ? (
-            <HelperText type="info" visible style={styles.warning}>
-              Appwrite no está configurado. Define las variables de entorno
-              `EXPO_PUBLIC_APPWRITE_*` para activar el login.
-            </HelperText>
-          ) : null}
-
-          <SegmentedButtons
-            style={styles.tabs}
-            value={activeTab}
-            onValueChange={(value) => setActiveTab(value as AuthTab)}
-            buttons={[
-              {
-                value: "login",
-                label: "Iniciar sesión",
-                icon: "login",
-              },
-              {
-                value: "register",
-                label: "Registrarse",
-                icon: "account-plus",
-              },
-            ]}
-          />
-
-          <View style={styles.form}>
-            <View>
-              <TextInput
-                label="Email"
-                placeholder="tu@email.com"
-                value={email}
-                onChangeText={setEmail}
-                onBlur={() => setEmailTouched(true)}
-                autoCapitalize="none"
-                keyboardType="email-address"
-                autoComplete="email"
-                mode="outlined"
-                style={styles.input}
-                textColor="#FFFFFF"
-                outlineColor="#8E8E8E"
-                activeOutlineColor="#FF3333"
-                placeholderTextColor="#9CA3AF"
-                error={emailTouched && email.length > 0 && !isEmailValid}
-                left={<TextInput.Icon icon="email" />}
-              />
-              {emailTouched && email.length > 0 && !isEmailValid && (
-                <HelperText type="error" visible>
-                  Por favor ingresa un email válido
-                </HelperText>
-              )}
-              {emailTouched && isEmailValid && (
-                <HelperText type="info" visible style={styles.successText}>
-                  ✓ Email válido
-                </HelperText>
-              )}
-            </View>
-
-            <View>
-              <TextInput
-                label="Contraseña"
-                placeholder="Mínimo 8 caracteres"
-                value={password}
-                onChangeText={setPassword}
-                onBlur={() => setPasswordTouched(true)}
-                secureTextEntry={!showPassword}
-                autoCapitalize="none"
-                autoComplete="password"
-                mode="outlined"
-                style={styles.input}
-                textColor="#FFFFFF"
-                outlineColor="#8E8E8E"
-                activeOutlineColor="#FF3333"
-                placeholderTextColor="#9CA3AF"
-                left={<TextInput.Icon icon="lock" />}
-                right={
-                  <TextInput.Icon
-                    icon={showPassword ? "eye-off" : "eye"}
-                    onPress={() => setShowPassword(!showPassword)}
-                  />
-                }
-              />
-              {activeTab === "register" &&
-                passwordTouched &&
-                password.length > 0 && (
-                  <View style={styles.passwordStrength}>
-                    <View style={styles.strengthHeader}>
-                      <Text style={styles.strengthLabel}>
-                        Fortaleza: {passwordStrength.label}
-                      </Text>
-                    </View>
-                    <ProgressBar
-                      progress={(passwordStrength.score + 1) / 5}
-                      color={passwordStrength.color}
-                      style={styles.progressBar}
-                    />
-                    <HelperText type="info" visible>
-                      {passwordStrength.score < 2
-                        ? "Usa mayúsculas, minúsculas, números y símbolos"
-                        : "Contraseña segura"}
-                    </HelperText>
-                  </View>
+            <View style={styles.form}>
+              <View>
+                <TextInput
+                  label="Email"
+                  placeholder="tu@email.com"
+                  value={email}
+                  onChangeText={setEmail}
+                  onBlur={() => setEmailTouched(true)}
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                  autoComplete="email"
+                  mode="outlined"
+                  style={styles.input}
+                  textColor="#FFFFFF"
+                  outlineColor="#8E8E8E"
+                  activeOutlineColor="#FF3333"
+                  placeholderTextColor="#9CA3AF"
+                  error={emailTouched && email.length > 0 && !isEmailValid}
+                  left={<TextInput.Icon icon="email" />}
+                />
+                {emailTouched && email.length > 0 && !isEmailValid && (
+                  <HelperText type="error" visible>
+                    Por favor ingresa un email válido
+                  </HelperText>
                 )}
-            </View>
-
-            {activeTab === "register" ? (
-              <TextInput
-                label="Nombre completo"
-                placeholder="Tu nombre"
-                value={name}
-                onChangeText={setName}
-                autoCapitalize="words"
-                mode="outlined"
-                style={styles.input}
-                textColor="#FFFFFF"
-                outlineColor="#8E8E8E"
-                activeOutlineColor="#FF3333"
-                placeholderTextColor="#9CA3AF"
-                left={<TextInput.Icon icon="account" />}
-              />
-            ) : null}
-
-            {activeTab === "login" && (
-              <View style={styles.loginOptions}>
-                <View style={styles.checkboxContainer}>
-                  <Checkbox.Android
-                    status={rememberMe ? "checked" : "unchecked"}
-                    onPress={() => setRememberMe(!rememberMe)}
-                  />
-                  <Text
-                    style={styles.checkboxLabel}
-                    onPress={() => setRememberMe(!rememberMe)}
-                  >
-                    Mantenerme conectado
-                  </Text>
-                </View>
-                <Button
-                  mode="text"
-                  onPress={handleForgotPassword}
-                  compact
-                  style={styles.forgotButton}
-                  textColor="#0055D4"
-                >
-                  ¿Olvidaste tu contraseña?
-                </Button>
+                {emailTouched && isEmailValid && (
+                  <HelperText type="info" visible style={styles.successText}>
+                    ✓ Email válido
+                  </HelperText>
+                )}
               </View>
-            )}
 
-            {activeTab === "login" ? (
-              <Button
-                mode="contained"
-                onPress={handleLogin}
-                disabled={loginDisabled}
-                loading={loading}
-                style={styles.button}
-              >
-                Iniciar sesión
-              </Button>
-            ) : (
-              <Button
-                mode="contained"
-                onPress={handleRegister}
-                disabled={registerDisabled}
-                loading={loading}
-                style={styles.button}
-                buttonColor="#0055D4"
-              >
-                Registrarse
-              </Button>
-            )}
+              <View>
+                <TextInput
+                  label="Contraseña"
+                  placeholder="Mínimo 8 caracteres"
+                  value={password}
+                  onChangeText={setPassword}
+                  onBlur={() => setPasswordTouched(true)}
+                  secureTextEntry={!showPassword}
+                  autoCapitalize="none"
+                  autoComplete="password"
+                  mode="outlined"
+                  style={styles.input}
+                  textColor="#FFFFFF"
+                  outlineColor="#8E8E8E"
+                  activeOutlineColor="#FF3333"
+                  placeholderTextColor="#9CA3AF"
+                  left={<TextInput.Icon icon="lock" />}
+                  right={
+                    <TextInput.Icon
+                      icon={showPassword ? "eye-off" : "eye"}
+                      onPress={() => setShowPassword(!showPassword)}
+                    />
+                  }
+                />
+                {activeTab === "register" &&
+                  passwordTouched &&
+                  password.length > 0 && (
+                    <View style={styles.passwordStrength}>
+                      <View style={styles.strengthHeader}>
+                        <Text style={styles.strengthLabel}>
+                          Fortaleza: {passwordStrength.label}
+                        </Text>
+                      </View>
+                      <ProgressBar
+                        progress={(passwordStrength.score + 1) / 5}
+                        color={passwordStrength.color}
+                        style={styles.progressBar}
+                      />
+                      <HelperText type="info" visible>
+                        {passwordStrength.score < 2
+                          ? "Usa mayúsculas, minúsculas, números y símbolos"
+                          : "Contraseña segura"}
+                      </HelperText>
+                    </View>
+                  )}
+              </View>
 
-            {user ? (
-              <Button
-                mode="outlined"
-                onPress={handleLogout}
-                disabled={loading}
-                loading={loading}
-                style={styles.button}
-              >
-                Cerrar sesión
-              </Button>
-            ) : null}
+              {activeTab === "register" ? (
+                <TextInput
+                  label="Nombre completo"
+                  placeholder="Tu nombre"
+                  value={name}
+                  onChangeText={setName}
+                  autoCapitalize="words"
+                  mode="outlined"
+                  style={styles.input}
+                  textColor="#FFFFFF"
+                  outlineColor="#8E8E8E"
+                  activeOutlineColor="#FF3333"
+                  placeholderTextColor="#9CA3AF"
+                  left={<TextInput.Icon icon="account" />}
+                />
+              ) : null}
+
+              {activeTab === "login" && (
+                <View style={styles.loginOptions}>
+                  <View style={styles.checkboxContainer}>
+                    <Checkbox.Android
+                      status={rememberMe ? "checked" : "unchecked"}
+                      onPress={() => setRememberMe(!rememberMe)}
+                    />
+                    <Text
+                      style={styles.checkboxLabel}
+                      onPress={() => setRememberMe(!rememberMe)}
+                    >
+                      Mantenerme conectado
+                    </Text>
+                  </View>
+                  <Button
+                    mode="text"
+                    onPress={handleForgotPassword}
+                    compact
+                    style={styles.forgotButton}
+                    textColor="#0055D4"
+                  >
+                    ¿Olvidaste tu contraseña?
+                  </Button>
+                </View>
+              )}
+
+              {activeTab === "login" ? (
+                <Button
+                  mode="contained"
+                  onPress={handleLogin}
+                  disabled={loginDisabled}
+                  loading={loading}
+                  style={styles.button}
+                >
+                  Iniciar sesión
+                </Button>
+              ) : (
+                <Button
+                  mode="contained"
+                  onPress={handleRegister}
+                  disabled={registerDisabled}
+                  loading={loading}
+                  style={styles.button}
+                  buttonColor="#0055D4"
+                >
+                  Registrarse
+                </Button>
+              )}
+
+              {user ? (
+                <Button
+                  mode="outlined"
+                  onPress={handleLogout}
+                  disabled={loading}
+                  loading={loading}
+                  style={styles.button}
+                >
+                  Cerrar sesión
+                </Button>
+              ) : null}
+            </View>
           </View>
-        </View>
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+      <Snackbar
+        visible={snackbarVisible}
+        onDismiss={() => setSnackbarVisible(false)}
+        duration={2000}
+        style={styles.snackbar}
+      >
+        {snackbarMessage}
+      </Snackbar>
     </SafeAreaView>
   );
 }
@@ -432,14 +473,17 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
+  keyboardView: {
+    flex: 1,
+  },
   scrollContent: {
     flexGrow: 1,
   },
   root: {
     flex: 1,
     paddingHorizontal: 24,
-    paddingVertical: 40,
-    gap: 24,
+    paddingVertical: 20,
+    gap: 16,
   },
   center: {
     flex: 1,
@@ -448,8 +492,8 @@ const styles = StyleSheet.create({
   },
   logoContainer: {
     alignItems: "center",
-    marginBottom: 8,
-    gap: 12,
+    marginBottom: 4,
+    gap: 8,
   },
   logo: {
     width: 120,
@@ -521,5 +565,8 @@ const styles = StyleSheet.create({
   forgotButton: {
     alignSelf: "flex-start",
     marginLeft: -8,
+  },
+  snackbar: {
+    backgroundColor: "#10B981",
   },
 });

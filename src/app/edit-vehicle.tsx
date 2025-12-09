@@ -1,7 +1,14 @@
 import * as ImagePicker from "expo-image-picker";
-import { useRouter } from "expo-router";
-import { useState } from "react";
-import { Alert, Image, ScrollView, StyleSheet, View } from "react-native";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  Image,
+  ScrollView,
+  StyleSheet,
+  View,
+} from "react-native";
 import { ID } from "react-native-appwrite";
 import {
   Button,
@@ -19,7 +26,9 @@ import {
   bucketId,
   databaseId,
   databases,
+  endpoint,
   isAppwriteConfigured,
+  projectId,
   storage,
 } from "@/lib/appwrite";
 
@@ -36,12 +45,16 @@ type VehiculoFormData = {
   fechaVencimientoSOAT: string;
 };
 
-export default function TabThreeScreen() {
+export default function EditVehicleScreen() {
   const theme = useTheme();
   const router = useRouter();
   const { user } = useAuth();
+  const { id } = useLocalSearchParams();
+
+  const [loadingData, setLoadingData] = useState(true);
   const [loading, setLoading] = useState(false);
   const [imageUri, setImageUri] = useState<string | null>(null);
+  const [existingImageId, setExistingImageId] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
@@ -57,6 +70,63 @@ export default function TabThreeScreen() {
   });
 
   const [errors, setErrors] = useState<Partial<VehiculoFormData>>({});
+
+  // Load vehicle data
+  useEffect(() => {
+    const loadVehicle = async () => {
+      if (!id || typeof id !== "string") {
+        Alert.alert("Error", "ID de vehículo no válido");
+        router.back();
+        return;
+      }
+
+      if (!isAppwriteConfigured) {
+        Alert.alert("Error", "Appwrite no está configurado correctamente");
+        router.back();
+        return;
+      }
+
+      try {
+        const vehicle = await databases.getDocument(
+          databaseId,
+          VEHICULOS_COLLECTION_ID,
+          id
+        );
+
+        // Convert ISO date to DD/MM/YYYY
+        const fecha = new Date(vehicle.fechaVencimientoSoat);
+        const day = String(fecha.getDate()).padStart(2, "0");
+        const month = String(fecha.getMonth() + 1).padStart(2, "0");
+        const year = fecha.getFullYear();
+        const fechaFormateada = `${day}/${month}/${year}`;
+
+        setFormData({
+          marca: vehicle.marca || "",
+          linea: vehicle.linea || "",
+          combustible: vehicle.combustible || "",
+          modelo: vehicle.modelo || "",
+          motor: vehicle.motor || "",
+          cajasCambios: vehicle.cajacambios || "",
+          fechaVencimientoSOAT: fechaFormateada,
+        });
+
+        if (vehicle.imageId) {
+          setExistingImageId(vehicle.imageId);
+          // Get image URL for preview (construct manually)
+          const imageUrl = `${endpoint}/storage/buckets/${bucketId}/files/${vehicle.imageId}/view?project=${projectId}`;
+          setImageUri(imageUrl);
+        }
+      } catch (error: any) {
+        console.error("Error al cargar vehículo:", error);
+        Alert.alert("Error", "No se pudo cargar el vehículo");
+        router.back();
+      } finally {
+        setLoadingData(false);
+      }
+    };
+
+    loadVehicle();
+  }, [id]);
 
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -82,6 +152,7 @@ export default function TabThreeScreen() {
 
   const removeImage = () => {
     setImageUri(null);
+    setExistingImageId(null);
   };
 
   const validateForm = (): boolean => {
@@ -114,11 +185,16 @@ export default function TabThreeScreen() {
     }
 
     if (!user) {
-      Alert.alert("Error", "Debes iniciar sesión para registrar un vehículo");
+      Alert.alert("Error", "Debes iniciar sesión");
       return;
     }
 
-    // Convertir fecha de DD/MM/AAAA a ISO 8601
+    if (!id || typeof id !== "string") {
+      Alert.alert("Error", "ID de vehículo no válido");
+      return;
+    }
+
+    // Convert date from DD/MM/YYYY to ISO 8601
     const [day, month, year] = formData.fechaVencimientoSOAT.split("/");
     let fechaISO: string;
     try {
@@ -138,17 +214,25 @@ export default function TabThreeScreen() {
     }
 
     setLoading(true);
-    let imageId: string | undefined;
+    let imageId: string | undefined = existingImageId || undefined;
 
     try {
-      // Upload image if selected
-      if (imageUri) {
+      // Upload new image if selected and different from existing
+      if (imageUri && !imageUri.includes("appwrite")) {
         setUploadingImage(true);
         try {
+          // Delete old image if exists
+          if (existingImageId) {
+            try {
+              await storage.deleteFile(bucketId, existingImageId);
+            } catch (deleteError) {
+              console.error("Error al eliminar imagen anterior:", deleteError);
+            }
+          }
+
           const response = await fetch(imageUri);
           const blob = await response.blob();
 
-          // Crear el objeto file compatible con React Native
           const file = {
             name: `vehiculo_${Date.now()}.jpg`,
             type: "image/jpeg",
@@ -164,60 +248,68 @@ export default function TabThreeScreen() {
           imageId = uploadResult.$id;
         } catch (uploadError) {
           console.error("Error al subir imagen:", uploadError);
-          Alert.alert(
-            "Advertencia",
-            "No se pudo subir la imagen, pero el vehículo se registrará sin foto"
-          );
+          Alert.alert("Advertencia", "No se pudo actualizar la imagen");
         } finally {
           setUploadingImage(false);
         }
+      } else if (!imageUri && existingImageId) {
+        // User removed the image
+        try {
+          await storage.deleteFile(bucketId, existingImageId);
+          imageId = undefined;
+        } catch (deleteError) {
+          console.error("Error al eliminar imagen:", deleteError);
+        }
       }
 
-      await databases.createDocument(
-        databaseId,
-        VEHICULOS_COLLECTION_ID,
-        ID.unique(),
-        {
-          userId: user.$id,
-          marca: formData.marca.trim(),
-          linea: formData.linea.trim(),
-          combustible: formData.combustible.trim(),
-          modelo: formData.modelo.trim(),
-          motor: formData.motor.trim(),
-          cajacambios: formData.cajasCambios.trim(),
-          fechaVencimientoSoat: fechaISO,
-          imageId: imageId || "",
-        }
-      );
-
-      // Limpiar el formulario
-      setFormData({
-        marca: "",
-        linea: "",
-        combustible: "",
-        modelo: "",
-        motor: "",
-        cajasCambios: "",
-        fechaVencimientoSOAT: "",
+      await databases.updateDocument(databaseId, VEHICULOS_COLLECTION_ID, id, {
+        marca: formData.marca.trim(),
+        linea: formData.linea.trim(),
+        combustible: formData.combustible.trim(),
+        modelo: formData.modelo.trim(),
+        motor: formData.motor.trim(),
+        cajacambios: formData.cajasCambios.trim(),
+        fechaVencimientoSoat: fechaISO,
+        imageId: imageId || "",
       });
-      setErrors({});
-      setImageUri(null);
 
-      // Mostrar Snackbar y redirigir
-      setSnackbarMessage("✓ Vehículo registrado correctamente");
+      // Show Snackbar and redirect
+      setSnackbarMessage("✓ Vehículo actualizado correctamente");
       setSnackbarVisible(true);
 
-      // Redirigir a Mi Garaje después de un breve delay
       setTimeout(() => {
         router.push("/(tabs)/four");
       }, 1500);
     } catch (error: any) {
-      console.error("Error al registrar vehículo:", error);
-      Alert.alert("Error", error.message || "No se pudo registrar el vehículo");
+      console.error("Error al actualizar vehículo:", error);
+      Alert.alert(
+        "Error",
+        error.message || "No se pudo actualizar el vehículo"
+      );
     } finally {
       setLoading(false);
     }
   };
+
+  // Exponer función globalmente para el header
+  useEffect(() => {
+    (global as any).handleSaveVehiculo = handleSubmit;
+
+    return () => {
+      delete (global as any).handleSaveVehiculo;
+    };
+  }, [handleSubmit]);
+
+  if (loadingData) {
+    return (
+      <SafeAreaView style={styles.container} edges={["bottom"]}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={theme.colors.primary} />
+          <Text style={styles.loadingText}>Cargando vehículo...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={["bottom"]}>
@@ -226,10 +318,10 @@ export default function TabThreeScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <Text variant="headlineMedium" style={styles.title}>
-          Registrar Vehículo
+          Editar Vehículo
         </Text>
         <Text variant="bodyMedium" style={styles.subtitle}>
-          Completa la información de tu vehículo
+          Modifica la información de tu vehículo
         </Text>
 
         <View style={styles.imageSection}>
@@ -249,172 +341,160 @@ export default function TabThreeScreen() {
             </View>
           ) : (
             <Button
-              mode="outlined"
+              mode="contained"
               onPress={pickImage}
               icon="camera"
-              disabled={loading}
               style={styles.imageButton}
               buttonColor={theme.colors.secondary}
               textColor="#FFFFFF"
             >
-              Seleccionar imagen
+              Seleccionar Imagen
             </Button>
           )}
         </View>
 
         <View style={styles.form}>
           <TextInput
-            label="Marca"
+            label="Marca *"
             value={formData.marca}
             onChangeText={(text) => {
               setFormData({ ...formData, marca: text });
-              if (errors.marca) setErrors({ ...errors, marca: undefined });
+              setErrors({ ...errors, marca: undefined });
             }}
             mode="outlined"
             error={!!errors.marca}
             style={styles.input}
-            disabled={loading}
+            textColor="#FFFFFF"
+            outlineColor="#8E8E8E"
+            activeOutlineColor="#FF3333"
+            placeholderTextColor="#9CA3AF"
           />
-          {errors.marca && (
-            <HelperText type="error" visible={!!errors.marca}>
-              {errors.marca}
-            </HelperText>
-          )}
+          <HelperText type="error" visible={!!errors.marca}>
+            {errors.marca}
+          </HelperText>
 
           <TextInput
-            label="Línea"
+            label="Línea *"
             value={formData.linea}
             onChangeText={(text) => {
               setFormData({ ...formData, linea: text });
-              if (errors.linea) setErrors({ ...errors, linea: undefined });
+              setErrors({ ...errors, linea: undefined });
             }}
             mode="outlined"
             error={!!errors.linea}
             style={styles.input}
-            disabled={loading}
+            textColor="#FFFFFF"
+            outlineColor="#8E8E8E"
+            activeOutlineColor="#FF3333"
+            placeholderTextColor="#9CA3AF"
           />
-          {errors.linea && (
-            <HelperText type="error" visible={!!errors.linea}>
-              {errors.linea}
-            </HelperText>
-          )}
+          <HelperText type="error" visible={!!errors.linea}>
+            {errors.linea}
+          </HelperText>
 
           <TextInput
-            label="Combustible"
+            label="Combustible *"
             value={formData.combustible}
             onChangeText={(text) => {
               setFormData({ ...formData, combustible: text });
-              if (errors.combustible)
-                setErrors({ ...errors, combustible: undefined });
+              setErrors({ ...errors, combustible: undefined });
             }}
             mode="outlined"
             error={!!errors.combustible}
             style={styles.input}
-            placeholder="Ej: Gasolina, Diesel, Eléctrico"
-            disabled={loading}
+            textColor="#FFFFFF"
+            outlineColor="#8E8E8E"
+            activeOutlineColor="#FF3333"
+            placeholderTextColor="#9CA3AF"
           />
-          {errors.combustible && (
-            <HelperText type="error" visible={!!errors.combustible}>
-              {errors.combustible}
-            </HelperText>
-          )}
+          <HelperText type="error" visible={!!errors.combustible}>
+            {errors.combustible}
+          </HelperText>
 
           <TextInput
-            label="Modelo (Año)"
+            label="Modelo *"
             value={formData.modelo}
             onChangeText={(text) => {
               setFormData({ ...formData, modelo: text });
-              if (errors.modelo) setErrors({ ...errors, modelo: undefined });
+              setErrors({ ...errors, modelo: undefined });
             }}
             mode="outlined"
             error={!!errors.modelo}
             style={styles.input}
-            keyboardType="numeric"
-            placeholder="Ej: 2024"
-            disabled={loading}
+            textColor="#FFFFFF"
+            outlineColor="#8E8E8E"
+            activeOutlineColor="#FF3333"
+            placeholderTextColor="#9CA3AF"
           />
-          {errors.modelo && (
-            <HelperText type="error" visible={!!errors.modelo}>
-              {errors.modelo}
-            </HelperText>
-          )}
+          <HelperText type="error" visible={!!errors.modelo}>
+            {errors.modelo}
+          </HelperText>
 
           <TextInput
-            label="Motor"
+            label="Motor *"
             value={formData.motor}
             onChangeText={(text) => {
               setFormData({ ...formData, motor: text });
-              if (errors.motor) setErrors({ ...errors, motor: undefined });
+              setErrors({ ...errors, motor: undefined });
             }}
             mode="outlined"
             error={!!errors.motor}
             style={styles.input}
-            placeholder="Ej: 2.0L Turbo"
-            disabled={loading}
+            textColor="#FFFFFF"
+            outlineColor="#8E8E8E"
+            activeOutlineColor="#FF3333"
+            placeholderTextColor="#9CA3AF"
           />
-          {errors.motor && (
-            <HelperText type="error" visible={!!errors.motor}>
-              {errors.motor}
-            </HelperText>
-          )}
+          <HelperText type="error" visible={!!errors.motor}>
+            {errors.motor}
+          </HelperText>
 
           <TextInput
-            label="Caja de Cambios"
+            label="Caja de Cambios *"
             value={formData.cajasCambios}
             onChangeText={(text) => {
               setFormData({ ...formData, cajasCambios: text });
-              if (errors.cajasCambios)
-                setErrors({ ...errors, cajasCambios: undefined });
+              setErrors({ ...errors, cajasCambios: undefined });
             }}
             mode="outlined"
             error={!!errors.cajasCambios}
             style={styles.input}
-            placeholder="Ej: Manual, Automática, CVT"
-            disabled={loading}
+            textColor="#FFFFFF"
+            outlineColor="#8E8E8E"
+            activeOutlineColor="#FF3333"
+            placeholderTextColor="#9CA3AF"
           />
-          {errors.cajasCambios && (
-            <HelperText type="error" visible={!!errors.cajasCambios}>
-              {errors.cajasCambios}
-            </HelperText>
-          )}
+          <HelperText type="error" visible={!!errors.cajasCambios}>
+            {errors.cajasCambios}
+          </HelperText>
 
           <TextInput
-            label="Fecha Vencimiento SOAT"
+            label="Fecha Vencimiento SOAT (DD/MM/AAAA) *"
             value={formData.fechaVencimientoSOAT}
             onChangeText={(text) => {
               setFormData({ ...formData, fechaVencimientoSOAT: text });
-              if (errors.fechaVencimientoSOAT)
-                setErrors({ ...errors, fechaVencimientoSOAT: undefined });
+              setErrors({ ...errors, fechaVencimientoSOAT: undefined });
             }}
             mode="outlined"
             error={!!errors.fechaVencimientoSOAT}
-            style={styles.input}
             placeholder="DD/MM/AAAA"
-            disabled={loading}
+            style={styles.input}
+            keyboardType="numeric"
+            textColor="#FFFFFF"
+            outlineColor="#8E8E8E"
+            activeOutlineColor="#FF3333"
+            placeholderTextColor="#9CA3AF"
           />
-          {errors.fechaVencimientoSOAT && (
-            <HelperText type="error" visible={!!errors.fechaVencimientoSOAT}>
-              {errors.fechaVencimientoSOAT}
-            </HelperText>
-          )}
-
-          <Button
-            mode="contained"
-            onPress={handleSubmit}
-            loading={loading}
-            disabled={loading}
-            style={styles.button}
-            contentStyle={styles.buttonContent}
-            buttonColor={theme.colors.secondary}
-          >
-            {loading ? "Guardando..." : "Registrar Vehículo"}
-          </Button>
+          <HelperText type="error" visible={!!errors.fechaVencimientoSOAT}>
+            {errors.fechaVencimientoSOAT}
+          </HelperText>
         </View>
       </ScrollView>
+
       <Snackbar
         visible={snackbarVisible}
         onDismiss={() => setSnackbarVisible(false)}
-        duration={2500}
+        duration={2000}
         style={styles.snackbar}
       >
         {snackbarMessage}
@@ -428,58 +508,61 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#121212",
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    marginTop: 16,
+    color: "#FFFFFF",
+  },
   scrollContent: {
     padding: 20,
   },
   title: {
-    marginBottom: 8,
     fontWeight: "bold",
+    color: "#FFFFFF",
+    marginBottom: 8,
   },
   subtitle: {
+    color: "#9CA3AF",
     marginBottom: 24,
-    opacity: 0.7,
   },
   imageSection: {
     marginBottom: 24,
   },
   imageSectionTitle: {
+    color: "#FFFFFF",
     marginBottom: 12,
-    fontWeight: "600",
+  },
+  imageButton: {
+    borderRadius: 8,
   },
   imagePreviewContainer: {
     position: "relative",
-    alignItems: "center",
+    borderRadius: 12,
+    overflow: "hidden",
   },
   imagePreview: {
     width: "100%",
     height: 200,
     borderRadius: 12,
-    backgroundColor: "#2A2A2A",
   },
   removeImageButton: {
     position: "absolute",
     top: 8,
     right: 8,
-    backgroundColor: "rgba(0,0,0,0.6)",
-  },
-  imageButton: {
-    borderStyle: "dashed",
-    borderWidth: 2,
-    paddingVertical: 32,
+    backgroundColor: "rgba(0,0,0,0.5)",
   },
   form: {
-    gap: 8,
+    marginBottom: 24,
   },
   input: {
     backgroundColor: "#2A2A2A",
-  },
-  button: {
-    marginTop: 16,
-  },
-  buttonContent: {
-    paddingVertical: 8,
+    marginBottom: 4,
   },
   snackbar: {
-    backgroundColor: "#10B981",
+    backgroundColor: "#4CAF50",
   },
 });
