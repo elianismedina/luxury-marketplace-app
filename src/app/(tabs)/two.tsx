@@ -89,28 +89,22 @@ export default function TabTwoScreen() {
       >
         <View style={styles.content}>
           {messages.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Text variant="headlineMedium" style={styles.emptyTitle}>
-                ¿Qué estás buscando?
-              </Text>
-              <Text variant="bodyLarge" style={styles.emptySubtitle}>
-                Pregunta por repuestos, servicios o accesorios para tu vehículo
-              </Text>
-              <View style={styles.suggestions}>
-                <Text variant="labelSmall" style={styles.suggestionLabel}>
-                  Ejemplos:
+            <>
+              <Image
+                source={require("../../../assets/images/searchScreenImage.webp")}
+                style={styles.heroImage}
+                resizeMode="cover"
+              />
+              <View style={styles.emptyState}>
+                <Text variant="headlineMedium" style={styles.emptyTitle}>
+                  ¿Qué estás buscando?
                 </Text>
-                <Text variant="bodyMedium" style={styles.suggestion}>
-                  • "Necesito llantas para un BMW 2020"
-                </Text>
-                <Text variant="bodyMedium" style={styles.suggestion}>
-                  • "Busco aceite sintético 5W-30"
-                </Text>
-                <Text variant="bodyMedium" style={styles.suggestion}>
-                  • "¿Dónde puedo hacer mantenimiento?"
+                <Text variant="bodyLarge" style={styles.emptySubtitle}>
+                  Pregunta por repuestos, servicios o accesorios para tu
+                  vehículo
                 </Text>
               </View>
-            </View>
+            </>
           ) : (
             <View style={styles.messagesContainer}>
               {messages.map((message, index) => (
@@ -216,7 +210,13 @@ const styles = StyleSheet.create({
   emptyState: {
     alignItems: "center",
     paddingHorizontal: 32,
-    paddingVertical: 48,
+    paddingVertical: 32,
+  },
+  heroImage: {
+    width: "100%",
+    height: 180,
+    marginBottom: 24,
+    opacity: 0.85,
   },
   emptyTitle: {
     fontWeight: "700",
@@ -228,24 +228,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     color: "#6b7280",
     marginBottom: 32,
-  },
-  suggestions: {
-    alignSelf: "stretch",
-    backgroundColor: "#2A2A2A",
-    borderRadius: 12,
-    padding: 20,
-    gap: 8,
-    borderWidth: 2,
-    borderColor: "#0055D4",
-  },
-  suggestionLabel: {
-    fontWeight: "600",
-    color: "#0055D4",
-    marginBottom: 4,
-  },
-  suggestion: {
-    color: "#374151",
-    lineHeight: 24,
   },
   messagesContainer: {
     flex: 1,
