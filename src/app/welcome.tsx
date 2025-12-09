@@ -6,9 +6,10 @@ import {
   Platform,
   StatusBar,
   StyleSheet,
+  Text,
   View,
 } from "react-native";
-import { Button, Text } from "react-native-paper";
+import { Button } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useAuth } from "@/context/AuthContext";
@@ -48,7 +49,7 @@ export default function WelcomeScreen() {
               resizeMode="contain"
             />
             <Text style={styles.tagline}>
-              Tu y tu carro{"\n"}merecen lo mejor
+              Tu y tu carro{"\n"}merecen el mundo.
             </Text>
           </View>
 
@@ -90,10 +91,11 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.45)",
     paddingHorizontal: 24,
+    paddingVertical: 24,
     justifyContent: "space-between",
   },
   content: {
-    marginTop: 32,
+    marginTop: 6,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -102,14 +104,15 @@ const styles = StyleSheet.create({
     maxWidth: 260,
     aspectRatio: 1,
     marginTop: 32,
+    marginBottom: -80,
   },
   tagline: {
     color: "#ffffff",
-    fontSize: 16,
-    fontWeight: "700",
-    textTransform: "uppercase",
-    letterSpacing: 1,
+    fontSize: 20,
+    fontFamily: "HomemadeApple",
+    letterSpacing: 0.5,
     textAlign: "center",
+    marginTop: 0,
   },
   actions: {
     gap: 8,
