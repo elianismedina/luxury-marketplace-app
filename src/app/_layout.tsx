@@ -7,6 +7,7 @@ import {
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
+import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import { ActivityIndicator, View } from "react-native";
 import { IconButton, PaperProvider } from "react-native-paper";
@@ -15,7 +16,7 @@ import { ThemeProvider as StyledThemeProvider } from "styled-components/native";
 
 import { useColorScheme } from "@/components/useColorScheme";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
-import { paperDarkTheme, paperLightTheme } from "@/theme/paperTheme";
+import { paperDarkTheme } from "@/theme/paperTheme";
 import { theme } from "@/theme/theme";
 
 export {
@@ -37,8 +38,10 @@ export default function RootLayout() {
     HomemadeApple: require("../../assets/fonts/HomemadeApple-Regular.ttf"),
     ...FontAwesome.font,
   });
-  const colorScheme = useColorScheme();
-  const paperTheme = colorScheme === "dark" ? paperDarkTheme : paperLightTheme;
+  // Force dark mode implementation
+  const systemColorScheme = useColorScheme();
+  const colorScheme = "dark";
+  const paperTheme = paperDarkTheme;
 
   // Expo Router uses Error Boundaries to catch errors in the navigation tree.
   useEffect(() => {
@@ -60,6 +63,7 @@ export default function RootLayout() {
       <PaperProvider theme={paperTheme}>
         <AuthProvider>
           <RootLayoutNav />
+          <StatusBar style="light" backgroundColor="#121212" />
         </AuthProvider>
       </PaperProvider>
     </StyledThemeProvider>
@@ -67,7 +71,7 @@ export default function RootLayout() {
 }
 
 function RootLayoutNav() {
-  const colorScheme = useColorScheme();
+  const colorScheme = "dark";
   const { initializing } = useAuth();
 
   if (initializing) {
