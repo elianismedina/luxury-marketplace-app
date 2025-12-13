@@ -69,6 +69,7 @@ export default function AuthScreen() {
     register,
     logout,
     recoverPassword,
+    loginWithGoogle,
   } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -237,6 +238,27 @@ export default function AuthScreen() {
       Alert.alert("Error al cerrar sesión", message);
     }
   }, [logout]);
+
+  const handleGoogleLogin = useCallback(async () => {
+    console.log("handleGoogleLogin: Button clicked");
+    try {
+      console.log("handleGoogleLogin: Calling loginWithGoogle...");
+      await loginWithGoogle();
+      console.log("handleGoogleLogin: loginWithGoogle completed");
+
+      // Show success message and redirect
+      setSnackbarMessage("✓ Sesión iniciada con Google");
+      setSnackbarVisible(true);
+      setShouldRedirect(true);
+    } catch (error) {
+      console.error("handleGoogleLogin: Error caught:", error);
+      const message =
+        error instanceof Error
+          ? error.message
+          : "No se pudo iniciar sesión con Google.";
+      Alert.alert("Error", message);
+    }
+  }, [loginWithGoogle]);
 
   if (initializing && !user) {
     return (
@@ -442,6 +464,27 @@ export default function AuthScreen() {
                 </Button>
               )}
 
+              {/* OAuth Divider */}
+              <View style={styles.divider}>
+                <View style={styles.dividerLine} />
+                <Text style={styles.dividerText}>O continúa con</Text>
+                <View style={styles.dividerLine} />
+              </View>
+
+              {/* Google Login Button */}
+              <Button
+                mode="outlined"
+                onPress={handleGoogleLogin}
+                disabled={loading}
+                loading={loading}
+                icon="google"
+                style={styles.googleButton}
+                textColor="#FFFFFF"
+                buttonColor="transparent"
+              >
+                Continuar con Google
+              </Button>
+
               {user ? (
                 <Button
                   mode="outlined"
@@ -528,6 +571,26 @@ const styles = StyleSheet.create({
   },
   button: {
     marginTop: 4,
+  },
+  divider: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 20,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: "#4A4A4A",
+  },
+  dividerText: {
+    marginHorizontal: 12,
+    color: "#9CA3AF",
+    fontSize: 14,
+  },
+  googleButton: {
+    borderColor: "#4A4A4A",
+    borderWidth: 1,
+    marginBottom: 8,
   },
   successText: {
     color: "#4caf50",
