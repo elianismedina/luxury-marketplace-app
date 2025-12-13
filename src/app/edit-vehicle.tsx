@@ -1,10 +1,13 @@
+import DateTimePicker from "@react-native-community/datetimepicker";
 import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  FlatList,
   Image,
+  Platform,
   ScrollView,
   StyleSheet,
   View,
@@ -14,13 +17,19 @@ import {
   Button,
   HelperText,
   IconButton,
+  Modal,
+  Portal,
   Snackbar,
   Text,
   TextInput,
+  TouchableRipple,
   useTheme,
 } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { LUXURY_BRANDS } from "@/constants/brands";
+import { COMBUSTIBLES } from "@/constants/combustibles";
+import { TRANSMISSIONS } from "@/constants/transmissions";
 import { useAuth } from "@/context/AuthContext";
 import {
   bucketId,
@@ -57,7 +66,19 @@ export default function EditVehicleScreen() {
   const [existingImageId, setExistingImageId] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [snackbarVisible, setSnackbarVisible] = useState(false);
+
   const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [showBrandMenu, setShowBrandMenu] = useState(false);
+  const [showCombustibleMenu, setShowCombustibleMenu] = useState(false);
+
+  const [showTransmissionMenu, setShowTransmissionMenu] = useState(false);
+  const [showYearMenu, setShowYearMenu] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: currentYear + 1 - 1950 + 1 }, (_, i) =>
+    (currentYear + 1 - i).toString()
+  );
 
   const [formData, setFormData] = useState<VehiculoFormData>({
     marca: "",
@@ -354,21 +375,51 @@ export default function EditVehicleScreen() {
         </View>
 
         <View style={styles.form}>
-          <TextInput
-            label="Marca *"
-            value={formData.marca}
-            onChangeText={(text) => {
-              setFormData({ ...formData, marca: text });
-              setErrors({ ...errors, marca: undefined });
-            }}
-            mode="outlined"
-            error={!!errors.marca}
-            style={styles.input}
-            textColor="#FFFFFF"
-            outlineColor="#8E8E8E"
-            activeOutlineColor="#FF3333"
-            placeholderTextColor="#9CA3AF"
-          />
+          <TouchableRipple onPress={() => setShowBrandMenu(true)}>
+            <View pointerEvents="none">
+              <TextInput
+                label="Marca *"
+                value={formData.marca}
+                mode="outlined"
+                error={!!errors.marca}
+                style={styles.input}
+                textColor="#FFFFFF"
+                outlineColor="#8E8E8E"
+                activeOutlineColor="#FF3333"
+                placeholderTextColor="#9CA3AF"
+                editable={false}
+                right={<TextInput.Icon icon="chevron-down" />}
+              />
+            </View>
+          </TouchableRipple>
+
+          <Portal>
+            <Modal
+              visible={showBrandMenu}
+              onDismiss={() => setShowBrandMenu(false)}
+              contentContainerStyle={styles.modalContent}
+            >
+              <Text variant="titleMedium" style={styles.modalTitle}>
+                Seleccione la Marca
+              </Text>
+              <FlatList
+                data={LUXURY_BRANDS}
+                keyExtractor={(item) => item}
+                renderItem={({ item }) => (
+                  <TouchableRipple
+                    onPress={() => {
+                      setFormData({ ...formData, marca: item });
+                      setErrors({ ...errors, marca: undefined });
+                      setShowBrandMenu(false);
+                    }}
+                    style={styles.yearItem}
+                  >
+                    <Text style={styles.yearText}>{item}</Text>
+                  </TouchableRipple>
+                )}
+              />
+            </Modal>
+          </Portal>
           <HelperText type="error" visible={!!errors.marca}>
             {errors.marca}
           </HelperText>
@@ -392,40 +443,101 @@ export default function EditVehicleScreen() {
             {errors.linea}
           </HelperText>
 
-          <TextInput
-            label="Combustible *"
-            value={formData.combustible}
-            onChangeText={(text) => {
-              setFormData({ ...formData, combustible: text });
-              setErrors({ ...errors, combustible: undefined });
-            }}
-            mode="outlined"
-            error={!!errors.combustible}
-            style={styles.input}
-            textColor="#FFFFFF"
-            outlineColor="#8E8E8E"
-            activeOutlineColor="#FF3333"
-            placeholderTextColor="#9CA3AF"
-          />
+          <TouchableRipple onPress={() => setShowCombustibleMenu(true)}>
+            <View pointerEvents="none">
+              <TextInput
+                label="Combustible *"
+                value={formData.combustible}
+                mode="outlined"
+                error={!!errors.combustible}
+                style={styles.input}
+                textColor="#FFFFFF"
+                outlineColor="#8E8E8E"
+                activeOutlineColor="#FF3333"
+                placeholderTextColor="#9CA3AF"
+                editable={false}
+                right={<TextInput.Icon icon="chevron-down" />}
+              />
+            </View>
+          </TouchableRipple>
+
+          <Portal>
+            <Modal
+              visible={showCombustibleMenu}
+              onDismiss={() => setShowCombustibleMenu(false)}
+              contentContainerStyle={styles.modalContent}
+            >
+              <Text variant="titleMedium" style={styles.modalTitle}>
+                Seleccione el Combustible
+              </Text>
+              <FlatList
+                data={COMBUSTIBLES}
+                keyExtractor={(item) => item}
+                renderItem={({ item }) => (
+                  <TouchableRipple
+                    onPress={() => {
+                      setFormData({ ...formData, combustible: item });
+                      setErrors({ ...errors, combustible: undefined });
+                      setShowCombustibleMenu(false);
+                    }}
+                    style={styles.yearItem}
+                  >
+                    <Text style={styles.yearText}>{item}</Text>
+                  </TouchableRipple>
+                )}
+              />
+            </Modal>
+          </Portal>
           <HelperText type="error" visible={!!errors.combustible}>
             {errors.combustible}
           </HelperText>
 
-          <TextInput
-            label="Modelo *"
-            value={formData.modelo}
-            onChangeText={(text) => {
-              setFormData({ ...formData, modelo: text });
-              setErrors({ ...errors, modelo: undefined });
-            }}
-            mode="outlined"
-            error={!!errors.modelo}
-            style={styles.input}
-            textColor="#FFFFFF"
-            outlineColor="#8E8E8E"
-            activeOutlineColor="#FF3333"
-            placeholderTextColor="#9CA3AF"
-          />
+          <TouchableRipple onPress={() => setShowYearMenu(true)}>
+            <View pointerEvents="none">
+              <TextInput
+                label="Modelo *"
+                value={formData.modelo}
+                mode="outlined"
+                error={!!errors.modelo}
+                style={styles.input}
+                textColor="#FFFFFF"
+                outlineColor="#8E8E8E"
+                activeOutlineColor="#FF3333"
+                placeholderTextColor="#9CA3AF"
+                editable={false}
+                right={<TextInput.Icon icon="chevron-down" />}
+              />
+            </View>
+          </TouchableRipple>
+
+          <Portal>
+            <Modal
+              visible={showYearMenu}
+              onDismiss={() => setShowYearMenu(false)}
+              contentContainerStyle={styles.modalContent}
+            >
+              <Text variant="titleMedium" style={styles.modalTitle}>
+                Seleccione el Año
+              </Text>
+              <FlatList
+                data={years}
+                keyExtractor={(item) => item}
+                renderItem={({ item }) => (
+                  <TouchableRipple
+                    onPress={() => {
+                      setFormData({ ...formData, modelo: item });
+                      setErrors({ ...errors, modelo: undefined });
+                      setShowYearMenu(false);
+                    }}
+                    style={styles.yearItem}
+                  >
+                    <Text style={styles.yearText}>{item}</Text>
+                  </TouchableRipple>
+                )}
+                style={{ maxHeight: 300 }}
+              />
+            </Modal>
+          </Portal>
           <HelperText type="error" visible={!!errors.modelo}>
             {errors.modelo}
           </HelperText>
@@ -449,45 +561,140 @@ export default function EditVehicleScreen() {
             {errors.motor}
           </HelperText>
 
-          <TextInput
-            label="Caja de Cambios *"
-            value={formData.cajasCambios}
-            onChangeText={(text) => {
-              setFormData({ ...formData, cajasCambios: text });
-              setErrors({ ...errors, cajasCambios: undefined });
-            }}
-            mode="outlined"
-            error={!!errors.cajasCambios}
-            style={styles.input}
-            textColor="#FFFFFF"
-            outlineColor="#8E8E8E"
-            activeOutlineColor="#FF3333"
-            placeholderTextColor="#9CA3AF"
-          />
+          <TouchableRipple onPress={() => setShowTransmissionMenu(true)}>
+            <View pointerEvents="none">
+              <TextInput
+                label="Caja de Cambios *"
+                value={formData.cajasCambios}
+                mode="outlined"
+                error={!!errors.cajasCambios}
+                style={styles.input}
+                textColor="#FFFFFF"
+                outlineColor="#8E8E8E"
+                activeOutlineColor="#FF3333"
+                placeholderTextColor="#9CA3AF"
+                editable={false}
+                right={<TextInput.Icon icon="chevron-down" />}
+              />
+            </View>
+          </TouchableRipple>
+
+          <Portal>
+            <Modal
+              visible={showTransmissionMenu}
+              onDismiss={() => setShowTransmissionMenu(false)}
+              contentContainerStyle={styles.modalContent}
+            >
+              <Text variant="titleMedium" style={styles.modalTitle}>
+                Seleccione la Caja de Cambios
+              </Text>
+              <FlatList
+                data={TRANSMISSIONS}
+                keyExtractor={(item) => item}
+                renderItem={({ item }) => (
+                  <TouchableRipple
+                    onPress={() => {
+                      setFormData({ ...formData, cajasCambios: item });
+                      setErrors({ ...errors, cajasCambios: undefined });
+                      setShowTransmissionMenu(false);
+                    }}
+                    style={styles.yearItem}
+                  >
+                    <Text style={styles.yearText}>{item}</Text>
+                  </TouchableRipple>
+                )}
+              />
+            </Modal>
+          </Portal>
           <HelperText type="error" visible={!!errors.cajasCambios}>
             {errors.cajasCambios}
           </HelperText>
 
-          <TextInput
-            label="Fecha Vencimiento SOAT (DD/MM/AAAA) *"
-            value={formData.fechaVencimientoSOAT}
-            onChangeText={(text) => {
-              setFormData({ ...formData, fechaVencimientoSOAT: text });
-              setErrors({ ...errors, fechaVencimientoSOAT: undefined });
-            }}
-            mode="outlined"
-            error={!!errors.fechaVencimientoSOAT}
-            placeholder="DD/MM/AAAA"
-            style={styles.input}
-            keyboardType="numeric"
-            textColor="#FFFFFF"
-            outlineColor="#8E8E8E"
-            activeOutlineColor="#FF3333"
-            placeholderTextColor="#9CA3AF"
-          />
+          <TouchableRipple onPress={() => setShowDatePicker(true)}>
+            <View pointerEvents="none">
+              <TextInput
+                label="Fecha Vencimiento SOAT *"
+                value={formData.fechaVencimientoSOAT}
+                mode="outlined"
+                error={!!errors.fechaVencimientoSOAT}
+                style={styles.input}
+                placeholder="DD/MM/AAAA"
+                editable={false}
+                textColor="#FFFFFF"
+                outlineColor="#8E8E8E"
+                activeOutlineColor="#FF3333"
+                placeholderTextColor="#9CA3AF"
+                right={<TextInput.Icon icon="calendar" />}
+              />
+            </View>
+          </TouchableRipple>
+          {showDatePicker && (
+            <DateTimePicker
+              value={(() => {
+                if (formData.fechaVencimientoSOAT) {
+                  const [day, month, year] =
+                    formData.fechaVencimientoSOAT.split("/");
+                  return new Date(
+                    parseInt(year),
+                    parseInt(month) - 1,
+                    parseInt(day)
+                  );
+                }
+                return new Date();
+              })()}
+              mode="date"
+              display="default"
+              onChange={(event, selectedDate) => {
+                if (Platform.OS === "android") {
+                  setShowDatePicker(false);
+                }
+                if (selectedDate && event.type !== "dismissed") {
+                  const day = selectedDate
+                    .getDate()
+                    .toString()
+                    .padStart(2, "0");
+                  const month = (selectedDate.getMonth() + 1)
+                    .toString()
+                    .padStart(2, "0");
+                  const year = selectedDate.getFullYear();
+                  setFormData({
+                    ...formData,
+                    fechaVencimientoSOAT: `${day}/${month}/${year}`,
+                  });
+                  if (errors.fechaVencimientoSOAT)
+                    setErrors({ ...errors, fechaVencimientoSOAT: undefined });
+                }
+                if (Platform.OS === "ios") {
+                  setShowDatePicker(false);
+                }
+              }}
+              locale="es-ES"
+            />
+          )}
           <HelperText type="error" visible={!!errors.fechaVencimientoSOAT}>
             {errors.fechaVencimientoSOAT}
           </HelperText>
+
+          <Button
+            mode="contained"
+            onPress={handleSubmit}
+            loading={loading}
+            disabled={loading}
+            style={styles.button}
+            contentStyle={styles.buttonContent}
+            buttonColor={theme.colors.secondary}
+          >
+            {loading ? "Guardando..." : "Guardar Cambios"}
+          </Button>
+          <Button
+            mode="outlined"
+            onPress={() => router.back()}
+            style={styles.cancelButton}
+            contentStyle={styles.buttonContent}
+            textColor={theme.colors.error}
+          >
+            Cancelar
+          </Button>
         </View>
       </ScrollView>
 
@@ -562,7 +769,40 @@ const styles = StyleSheet.create({
     backgroundColor: "#2A2A2A",
     marginBottom: 4,
   },
+  button: {
+    marginTop: 16,
+  },
+  cancelButton: {
+    marginTop: 12,
+    borderColor: "#CF6679",
+  },
+  buttonContent: {
+    paddingVertical: 8,
+  },
   snackbar: {
     backgroundColor: "#4CAF50",
+  },
+  modalContent: {
+    backgroundColor: "#2A2A2A",
+    margin: 20,
+    borderRadius: 8,
+    padding: 20,
+    maxHeight: "80%",
+  },
+  modalTitle: {
+    color: "#FFFFFF",
+    marginBottom: 16,
+    textAlign: "center",
+  },
+  yearItem: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#3E3E3E",
+  },
+  yearText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    textAlign: "center",
   },
 });

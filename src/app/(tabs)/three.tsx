@@ -1,19 +1,34 @@
+import DateTimePicker from "@react-native-community/datetimepicker";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { Alert, Image, ScrollView, StyleSheet, View } from "react-native";
+import {
+  Alert,
+  FlatList,
+  Image,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  View,
+} from "react-native";
 import { ID } from "react-native-appwrite";
 import {
   Button,
   HelperText,
   IconButton,
+  Modal,
+  Portal,
   Snackbar,
   Text,
   TextInput,
+  TouchableRipple,
   useTheme,
 } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { LUXURY_BRANDS } from "@/constants/brands";
+import { COMBUSTIBLES } from "@/constants/combustibles";
+import { TRANSMISSIONS } from "@/constants/transmissions";
 import { useAuth } from "@/context/AuthContext";
 import {
   bucketId,
@@ -45,6 +60,16 @@ export default function TabThreeScreen() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [showBrandMenu, setShowBrandMenu] = useState(false);
+  const [showCombustibleMenu, setShowCombustibleMenu] = useState(false);
+  const [showTransmissionMenu, setShowTransmissionMenu] = useState(false);
+  const [showYearMenu, setShowYearMenu] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: currentYear + 1 - 1950 + 1 }, (_, i) =>
+    (currentYear + 1 - i).toString()
+  );
 
   const [formData, setFormData] = useState<VehiculoFormData>({
     marca: "",
@@ -263,18 +288,48 @@ export default function TabThreeScreen() {
         </View>
 
         <View style={styles.form}>
-          <TextInput
-            label="Marca"
-            value={formData.marca}
-            onChangeText={(text) => {
-              setFormData({ ...formData, marca: text });
-              if (errors.marca) setErrors({ ...errors, marca: undefined });
-            }}
-            mode="outlined"
-            error={!!errors.marca}
-            style={styles.input}
-            disabled={loading}
-          />
+          <TouchableRipple onPress={() => setShowBrandMenu(true)}>
+            <View pointerEvents="none">
+              <TextInput
+                label="Marca"
+                value={formData.marca}
+                mode="outlined"
+                error={!!errors.marca}
+                style={styles.input}
+                editable={false}
+                right={<TextInput.Icon icon="chevron-down" />}
+              />
+            </View>
+          </TouchableRipple>
+
+          <Portal>
+            <Modal
+              visible={showBrandMenu}
+              onDismiss={() => setShowBrandMenu(false)}
+              contentContainerStyle={styles.modalContent}
+            >
+              <Text variant="titleMedium" style={styles.modalTitle}>
+                Seleccione la Marca
+              </Text>
+              <FlatList
+                data={LUXURY_BRANDS}
+                keyExtractor={(item) => item}
+                renderItem={({ item }) => (
+                  <TouchableRipple
+                    onPress={() => {
+                      setFormData({ ...formData, marca: item });
+                      if (errors.marca)
+                        setErrors({ ...errors, marca: undefined });
+                      setShowBrandMenu(false);
+                    }}
+                    style={styles.yearItem}
+                  >
+                    <Text style={styles.yearText}>{item}</Text>
+                  </TouchableRipple>
+                )}
+              />
+            </Modal>
+          </Portal>
           {errors.marca && (
             <HelperText type="error" visible={!!errors.marca}>
               {errors.marca}
@@ -299,40 +354,99 @@ export default function TabThreeScreen() {
             </HelperText>
           )}
 
-          <TextInput
-            label="Combustible"
-            value={formData.combustible}
-            onChangeText={(text) => {
-              setFormData({ ...formData, combustible: text });
-              if (errors.combustible)
-                setErrors({ ...errors, combustible: undefined });
-            }}
-            mode="outlined"
-            error={!!errors.combustible}
-            style={styles.input}
-            placeholder="Ej: Gasolina, Diesel, Eléctrico"
-            disabled={loading}
-          />
+          <TouchableRipple onPress={() => setShowCombustibleMenu(true)}>
+            <View pointerEvents="none">
+              <TextInput
+                label="Combustible"
+                value={formData.combustible}
+                mode="outlined"
+                error={!!errors.combustible}
+                style={styles.input}
+                placeholder="Seleccione combustible"
+                editable={false}
+                right={<TextInput.Icon icon="chevron-down" />}
+              />
+            </View>
+          </TouchableRipple>
+
+          <Portal>
+            <Modal
+              visible={showCombustibleMenu}
+              onDismiss={() => setShowCombustibleMenu(false)}
+              contentContainerStyle={styles.modalContent}
+            >
+              <Text variant="titleMedium" style={styles.modalTitle}>
+                Seleccione el Combustible
+              </Text>
+              <FlatList
+                data={COMBUSTIBLES}
+                keyExtractor={(item) => item}
+                renderItem={({ item }) => (
+                  <TouchableRipple
+                    onPress={() => {
+                      setFormData({ ...formData, combustible: item });
+                      if (errors.combustible)
+                        setErrors({ ...errors, combustible: undefined });
+                      setShowCombustibleMenu(false);
+                    }}
+                    style={styles.yearItem}
+                  >
+                    <Text style={styles.yearText}>{item}</Text>
+                  </TouchableRipple>
+                )}
+              />
+            </Modal>
+          </Portal>
           {errors.combustible && (
             <HelperText type="error" visible={!!errors.combustible}>
               {errors.combustible}
             </HelperText>
           )}
 
-          <TextInput
-            label="Modelo (Año)"
-            value={formData.modelo}
-            onChangeText={(text) => {
-              setFormData({ ...formData, modelo: text });
-              if (errors.modelo) setErrors({ ...errors, modelo: undefined });
-            }}
-            mode="outlined"
-            error={!!errors.modelo}
-            style={styles.input}
-            keyboardType="numeric"
-            placeholder="Ej: 2024"
-            disabled={loading}
-          />
+          <TouchableRipple onPress={() => setShowYearMenu(true)}>
+            <View pointerEvents="none">
+              <TextInput
+                label="Modelo (Año)"
+                value={formData.modelo}
+                mode="outlined"
+                error={!!errors.modelo}
+                style={styles.input}
+                placeholder="Seleccione año"
+                editable={false}
+                right={<TextInput.Icon icon="chevron-down" />}
+              />
+            </View>
+          </TouchableRipple>
+
+          <Portal>
+            <Modal
+              visible={showYearMenu}
+              onDismiss={() => setShowYearMenu(false)}
+              contentContainerStyle={styles.modalContent}
+            >
+              <Text variant="titleMedium" style={styles.modalTitle}>
+                Seleccione el Año
+              </Text>
+              <FlatList
+                data={years}
+                keyExtractor={(item) => item}
+                renderItem={({ item }) => (
+                  <TouchableRipple
+                    onPress={() => {
+                      setFormData({ ...formData, modelo: item });
+                      if (errors.modelo)
+                        setErrors({ ...errors, modelo: undefined });
+                      setShowYearMenu(false);
+                    }}
+                    style={styles.yearItem}
+                  >
+                    <Text style={styles.yearText}>{item}</Text>
+                  </TouchableRipple>
+                )}
+                style={{ maxHeight: 300 }}
+              />
+            </Modal>
+          </Portal>
           {errors.modelo && (
             <HelperText type="error" visible={!!errors.modelo}>
               {errors.modelo}
@@ -358,40 +472,119 @@ export default function TabThreeScreen() {
             </HelperText>
           )}
 
-          <TextInput
-            label="Caja de Cambios"
-            value={formData.cajasCambios}
-            onChangeText={(text) => {
-              setFormData({ ...formData, cajasCambios: text });
-              if (errors.cajasCambios)
-                setErrors({ ...errors, cajasCambios: undefined });
-            }}
-            mode="outlined"
-            error={!!errors.cajasCambios}
-            style={styles.input}
-            placeholder="Ej: Manual, Automática, CVT"
-            disabled={loading}
-          />
+          <TouchableRipple onPress={() => setShowTransmissionMenu(true)}>
+            <View pointerEvents="none">
+              <TextInput
+                label="Caja de Cambios"
+                value={formData.cajasCambios}
+                mode="outlined"
+                error={!!errors.cajasCambios}
+                style={styles.input}
+                placeholder="Seleccione caja de cambios"
+                editable={false}
+                right={<TextInput.Icon icon="chevron-down" />}
+              />
+            </View>
+          </TouchableRipple>
+
+          <Portal>
+            <Modal
+              visible={showTransmissionMenu}
+              onDismiss={() => setShowTransmissionMenu(false)}
+              contentContainerStyle={styles.modalContent}
+            >
+              <Text variant="titleMedium" style={styles.modalTitle}>
+                Seleccione la Caja de Cambios
+              </Text>
+              <FlatList
+                data={TRANSMISSIONS}
+                keyExtractor={(item) => item}
+                renderItem={({ item }) => (
+                  <TouchableRipple
+                    onPress={() => {
+                      setFormData({ ...formData, cajasCambios: item });
+                      if (errors.cajasCambios)
+                        setErrors({ ...errors, cajasCambios: undefined });
+                      setShowTransmissionMenu(false);
+                    }}
+                    style={styles.yearItem}
+                  >
+                    <Text style={styles.yearText}>{item}</Text>
+                  </TouchableRipple>
+                )}
+              />
+            </Modal>
+          </Portal>
           {errors.cajasCambios && (
             <HelperText type="error" visible={!!errors.cajasCambios}>
               {errors.cajasCambios}
             </HelperText>
           )}
 
-          <TextInput
-            label="Fecha Vencimiento SOAT"
-            value={formData.fechaVencimientoSOAT}
-            onChangeText={(text) => {
-              setFormData({ ...formData, fechaVencimientoSOAT: text });
-              if (errors.fechaVencimientoSOAT)
-                setErrors({ ...errors, fechaVencimientoSOAT: undefined });
-            }}
-            mode="outlined"
-            error={!!errors.fechaVencimientoSOAT}
-            style={styles.input}
-            placeholder="DD/MM/AAAA"
-            disabled={loading}
-          />
+          <TouchableRipple onPress={() => setShowDatePicker(true)}>
+            <View pointerEvents="none">
+              <TextInput
+                label="Fecha Vencimiento SOAT"
+                value={formData.fechaVencimientoSOAT}
+                mode="outlined"
+                error={!!errors.fechaVencimientoSOAT}
+                style={styles.input}
+                placeholder="DD/MM/AAAA"
+                editable={false}
+                right={<TextInput.Icon icon="calendar" />}
+              />
+            </View>
+          </TouchableRipple>
+          {showDatePicker && (
+            <DateTimePicker
+              value={(() => {
+                if (formData.fechaVencimientoSOAT) {
+                  const [day, month, year] =
+                    formData.fechaVencimientoSOAT.split("/");
+                  return new Date(
+                    parseInt(year),
+                    parseInt(month) - 1,
+                    parseInt(day)
+                  );
+                }
+                return new Date();
+              })()}
+              mode="date"
+              display="default"
+              onChange={(event, selectedDate) => {
+                if (Platform.OS === "android") {
+                  setShowDatePicker(false);
+                }
+                if (selectedDate && event.type !== "dismissed") {
+                  const day = selectedDate
+                    .getDate()
+                    .toString()
+                    .padStart(2, "0");
+                  const month = (selectedDate.getMonth() + 1)
+                    .toString()
+                    .padStart(2, "0");
+                  const year = selectedDate.getFullYear();
+                  setFormData({
+                    ...formData,
+                    fechaVencimientoSOAT: `${day}/${month}/${year}`,
+                  });
+                  if (errors.fechaVencimientoSOAT)
+                    setErrors({ ...errors, fechaVencimientoSOAT: undefined });
+                }
+                if (Platform.OS === "ios") {
+                  // On iOS we might want to manually close it if it's in a modal,
+                  // or keep it if it's inline. Here assuming default behavior (modal/compact-like popup)
+                  // For simplicity in this stack, we'll let user tap outside or add a done button if needed,
+                  // but standard DateTimePicker on iOS often needs wrapping if not inline.
+                  // However, 'default' on iOS 14+ is usually a compact picker.
+                  // To be safe and consistent, we'll auto-close on selection if it's not inline.
+                  // But often iOS users expect to see the change live.
+                  setShowDatePicker(false);
+                }
+              }}
+              locale="es-ES"
+            />
+          )}
           {errors.fechaVencimientoSOAT && (
             <HelperText type="error" visible={!!errors.fechaVencimientoSOAT}>
               {errors.fechaVencimientoSOAT}
@@ -408,6 +601,29 @@ export default function TabThreeScreen() {
             buttonColor={theme.colors.secondary}
           >
             {loading ? "Guardando..." : "Registrar Vehículo"}
+          </Button>
+          <Button
+            mode="outlined"
+            onPress={() => {
+              // Limpiar datos y redirigir
+              setFormData({
+                marca: "",
+                linea: "",
+                combustible: "",
+                modelo: "",
+                motor: "",
+                cajasCambios: "",
+                fechaVencimientoSOAT: "",
+              });
+              setErrors({});
+              setImageUri(null);
+              router.push("/(tabs)/four");
+            }}
+            style={styles.cancelButton}
+            contentStyle={styles.buttonContent}
+            textColor={theme.colors.error}
+          >
+            Cancelar
           </Button>
         </View>
       </ScrollView>
@@ -476,10 +692,37 @@ const styles = StyleSheet.create({
   button: {
     marginTop: 16,
   },
+  cancelButton: {
+    marginTop: 12,
+    borderColor: "#CF6679",
+  },
   buttonContent: {
     paddingVertical: 8,
   },
   snackbar: {
     backgroundColor: "#10B981",
+  },
+  modalContent: {
+    backgroundColor: "#2A2A2A",
+    margin: 20,
+    borderRadius: 8,
+    padding: 20,
+    maxHeight: "80%",
+  },
+  modalTitle: {
+    color: "#FFFFFF",
+    marginBottom: 16,
+    textAlign: "center",
+  },
+  yearItem: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#3E3E3E",
+  },
+  yearText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    textAlign: "center",
   },
 });
