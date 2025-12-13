@@ -69,6 +69,7 @@ export default function AuthScreen() {
     register,
     logout,
     recoverPassword,
+    loginWithGoogle,
   } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -89,14 +90,23 @@ export default function AuthScreen() {
   }, [params.tab]);
 
   useEffect(() => {
+    console.log("Navigation useEffect:", {
+      initializing,
+      hasUser: !!user,
+      shouldRedirect,
+    });
+
     if (!initializing && user && shouldRedirect) {
       // Delay para permitir que el Snackbar se muestre antes de redirigir
+      console.log("Navigation: Scheduling redirect to /(tabs) in 1.8s");
       const timer = setTimeout(() => {
+        console.log("Navigation: Redirecting to /(tabs)");
         router.replace("/(tabs)");
       }, 1800);
       return () => clearTimeout(timer);
     } else if (!initializing && user && !shouldRedirect) {
       // Si el usuario ya existía (no es un nuevo login), redirigir inmediatamente
+      console.log("Navigation: Immediate redirect to /(tabs)");
       router.replace("/(tabs)");
     }
   }, [initializing, user, router, shouldRedirect]);
@@ -237,6 +247,33 @@ export default function AuthScreen() {
       Alert.alert("Error al cerrar sesión", message);
     }
   }, [logout]);
+
+  const handleGoogleLogin = useCallback(async () => {
+    console.log("handleGoogleLogin: Button clicked");
+    try {
+      console.log("handleGoogleLogin: Calling loginWithGoogle...");
+
+      setSnackbarMessage("✓ Sesión iniciada con Google");
+      setSnackbarVisible(true);
+
+      await loginWithGoogle();
+      console.log("handleGoogleLogin: loginWithGoogle completed");
+
+      // Navigate directly after successful OAuth
+      console.log("handleGoogleLogin: Navigating to /(tabs)");
+      setTimeout(() => {
+        router.replace("/(tabs)");
+      }, 1000);
+    } catch (error) {
+      console.error("handleGoogleLogin: Error caught:", error);
+      setSnackbarVisible(false);
+      const message =
+        error instanceof Error
+          ? error.message
+          : "No se pudo iniciar sesión con Google.";
+      Alert.alert("Error", message);
+    }
+  }, [loginWithGoogle, router]);
 
   if (initializing && !user) {
     return (
@@ -442,6 +479,27 @@ export default function AuthScreen() {
                 </Button>
               )}
 
+              {/* OAuth Divider */}
+              <View style={styles.divider}>
+                <View style={styles.dividerLine} />
+                <Text style={styles.dividerText}>O continúa con</Text>
+                <View style={styles.dividerLine} />
+              </View>
+
+              {/* Google Login Button */}
+              <Button
+                mode="outlined"
+                onPress={handleGoogleLogin}
+                disabled={loading}
+                loading={loading}
+                icon="google"
+                style={styles.googleButton}
+                textColor="#FFFFFF"
+                buttonColor="transparent"
+              >
+                Continuar con Google
+              </Button>
+
               {user ? (
                 <Button
                   mode="outlined"
@@ -528,6 +586,26 @@ const styles = StyleSheet.create({
   },
   button: {
     marginTop: 4,
+  },
+  divider: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 20,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: "#4A4A4A",
+  },
+  dividerText: {
+    marginHorizontal: 12,
+    color: "#9CA3AF",
+    fontSize: 14,
+  },
+  googleButton: {
+    borderColor: "#4A4A4A",
+    borderWidth: 1,
+    marginBottom: 8,
   },
   successText: {
     color: "#4caf50",

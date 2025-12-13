@@ -1,11 +1,28 @@
 import Constants from "expo-constants";
-import {
-  Account,
-  Avatars,
-  Client,
-  Databases,
-  Storage,
-} from "react-native-appwrite";
+import { Platform } from "react-native";
+
+// Use web SDK for web platform, React Native SDK for mobile
+const isWeb = Platform.OS === "web";
+
+let Account: any, Avatars: any, Client: any, Databases: any, Storage: any;
+
+if (isWeb) {
+  // Web SDK
+  const appwrite = require("appwrite");
+  Account = appwrite.Account;
+  Avatars = appwrite.Avatars;
+  Client = appwrite.Client;
+  Databases = appwrite.Databases;
+  Storage = appwrite.Storage;
+} else {
+  // React Native SDK
+  const rnAppwrite = require("react-native-appwrite");
+  Account = rnAppwrite.Account;
+  Avatars = rnAppwrite.Avatars;
+  Client = rnAppwrite.Client;
+  Databases = rnAppwrite.Databases;
+  Storage = rnAppwrite.Storage;
+}
 
 const endpoint =
   process.env.EXPO_PUBLIC_APPWRITE_ENDPOINT ??
@@ -49,7 +66,8 @@ if (projectId) {
   client.setProject(projectId);
 }
 
-if (platform) {
+// setPlatform only exists in react-native-appwrite, not in web SDK
+if (platform && !isWeb) {
   client.setPlatform(platform);
 }
 
