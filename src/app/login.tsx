@@ -252,23 +252,6 @@ export default function AuthScreen() {
     console.log("handleGoogleLogin: Button clicked");
     try {
       console.log("handleGoogleLogin: Calling loginWithGoogle...");
-<<<<<<< HEAD
-
-      setSnackbarMessage("✓ Sesión iniciada con Google");
-      setSnackbarVisible(true);
-
-      await loginWithGoogle();
-      console.log("handleGoogleLogin: loginWithGoogle completed");
-
-      // Navigate directly after successful OAuth
-      console.log("handleGoogleLogin: Navigating to /(tabs)");
-      setTimeout(() => {
-        router.replace("/(tabs)");
-      }, 1000);
-    } catch (error) {
-      console.error("handleGoogleLogin: Error caught:", error);
-      setSnackbarVisible(false);
-=======
       await loginWithGoogle();
       console.log("handleGoogleLogin: loginWithGoogle completed");
 
@@ -278,18 +261,14 @@ export default function AuthScreen() {
       setShouldRedirect(true);
     } catch (error) {
       console.error("handleGoogleLogin: Error caught:", error);
->>>>>>> b73d19d91134338713c2ecc2d61b9864c2975536
+      setSnackbarVisible(false);
       const message =
         error instanceof Error
           ? error.message
           : "No se pudo iniciar sesión con Google.";
       Alert.alert("Error", message);
     }
-<<<<<<< HEAD
   }, [loginWithGoogle, router]);
-=======
-  }, [loginWithGoogle]);
->>>>>>> b73d19d91134338713c2ecc2d61b9864c2975536
 
   if (initializing && !user) {
     return (

@@ -248,7 +248,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           );
 
           console.log("loginWithGoogle: WebBrowser result:", result);
-<<<<<<< HEAD
           console.log("loginWithGoogle: Result type:", result.type);
 
           if (result.type === "success") {
@@ -308,19 +307,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           } else {
             console.log("loginWithGoogle: Unknown result type:", result.type);
             throw new Error("Resultado de autenticación desconocido");
-=======
-
-          if (result.type === "success") {
-            console.log(
-              "loginWithGoogle: OAuth successful, refreshing session..."
-            );
-            // Wait for Appwrite to finalize the session
-            await new Promise((resolve) => setTimeout(resolve, 1500));
-            await refresh();
-            console.log("loginWithGoogle: Session refreshed successfully");
-          } else if (result.type === "cancel") {
-            throw new Error("Inicio de sesión cancelado");
->>>>>>> b73d19d91134338713c2ecc2d61b9864c2975536
           }
         } catch (webBrowserError) {
           console.error("loginWithGoogle: WebBrowser error:", webBrowserError);
