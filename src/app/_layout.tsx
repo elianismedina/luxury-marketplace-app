@@ -9,15 +9,17 @@ import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
-import { ActivityIndicator, View } from "react-native";
+import { View } from "react-native";
 import { IconButton, PaperProvider } from "react-native-paper";
 import "react-native-reanimated";
 import { ThemeProvider as StyledThemeProvider } from "styled-components/native";
 
+import { AnimatedSplashScreen } from "@/components/AnimatedSplashScreen";
 import { useColorScheme } from "@/components/useColorScheme";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { paperDarkTheme } from "@/theme/paperTheme";
 import { theme } from "@/theme/theme";
+import { useState } from "react";
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -48,12 +50,6 @@ export default function RootLayout() {
     if (error) throw error;
   }, [error]);
 
-  useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync();
-    }
-  }, [loaded]);
-
   if (!loaded) {
     return null;
   }
@@ -72,53 +68,56 @@ export default function RootLayout() {
 
 function RootLayoutNav() {
   const colorScheme = "dark";
-  const { initializing } = useAuth();
+  const [isSplashFinished, setIsSplashFinished] = useState(false);
+  const { user, initializing } = useAuth();
 
-  if (initializing) {
-    return (
-      <View
-        style={{
-          flex: 1,
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <ActivityIndicator size="large" />
-      </View>
-    );
+  if (initializing && !user) {
+    // If initializing but NO user data/check running, we just render normally
+    // but keep the Splash Screen up via the component below.
+    // However, the original code had an explicit early return for initializing.
+    // We should REMOVE that early return because we want to render the Stack (behind the splash)
+    // so the Router can initialize and we can perform redirects.
   }
 
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="welcome" options={{ headerShown: false }} />
-        <Stack.Screen name="login" options={{ headerShown: false }} />
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: "modal" }} />
-        <Stack.Screen
-          name="edit-vehicle"
-          options={{
-            title: "Editar Vehículo",
-            headerStyle: { backgroundColor: theme.colors.primary },
-            headerTintColor: "#FFFFFF",
-            headerTitleStyle: { fontWeight: "bold" },
-            headerRight: () => (
-              <View style={{ flexDirection: "row", marginRight: 8 }}>
-                <IconButton
-                  icon="check"
-                  iconColor="#FFFFFF"
-                  size={26}
-                  onPress={() => {
-                    if ((global as any).handleSaveVehiculo) {
-                      (global as any).handleSaveVehiculo();
-                    }
-                  }}
-                />
-              </View>
-            ),
-          }}
-        />
-      </Stack>
+      <View style={{ flex: 1 }}>
+        <Stack>
+          <Stack.Screen name="welcome" options={{ headerShown: false }} />
+          <Stack.Screen name="login" options={{ headerShown: false }} />
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="modal" options={{ presentation: "modal" }} />
+          <Stack.Screen
+            name="edit-vehicle"
+            options={{
+              title: "Editar Vehículo",
+              headerStyle: { backgroundColor: theme.colors.primary },
+              headerTintColor: "#FFFFFF",
+              headerTitleStyle: { fontWeight: "bold" },
+              headerRight: () => (
+                <View style={{ flexDirection: "row", marginRight: 8 }}>
+                  <IconButton
+                    icon="check"
+                    iconColor="#FFFFFF"
+                    size={26}
+                    onPress={() => {
+                      if ((global as any).handleSaveVehiculo) {
+                        (global as any).handleSaveVehiculo();
+                      }
+                    }}
+                  />
+                </View>
+              ),
+            }}
+          />
+        </Stack>
+        {!isSplashFinished && (
+          <AnimatedSplashScreen
+            triggerAnimation={!initializing}
+            onAnimationFinish={() => setIsSplashFinished(true)}
+          />
+        )}
+      </View>
     </ThemeProvider>
   );
 }
