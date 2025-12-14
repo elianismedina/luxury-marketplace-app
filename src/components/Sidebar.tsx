@@ -64,14 +64,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ visible, onClose }) => {
     router.replace("/welcome");
   };
 
-  if (!visible && translateX.value === width) {
-    // Optimization: render nothing if closed and animation finished?
-    // Hard to sync without onFinished callback.
-    // For now, pointerEvents box-none on container + opacity control is enough visually.
-    // actually, we can return null if not visible AND animation done?
-    // simplified: just keep it mounted but off-screen.
-  }
-
   return (
     <View
       style={[

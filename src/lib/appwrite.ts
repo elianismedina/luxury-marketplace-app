@@ -44,6 +44,8 @@ const bucketId =
   process.env.EXPO_PUBLIC_APPWRITE_BUCKET_VEHICULOS_ID ??
   Constants.expoConfig?.extra?.appwriteBucketVehiculosId ??
   "";
+const categoriesCollectionId =
+  process.env.EXPO_PUBLIC_APPWRITE_COLLECTION_CATEGORIES_ID ?? "categoria";
 
 export const isAppwriteConfigured = Boolean(endpoint && projectId && platform);
 
@@ -76,7 +78,7 @@ export const avatars = new Avatars(client);
 export const databases = new Databases(client);
 export const storage = new Storage(client);
 
-export { bucketId, databaseId, endpoint, projectId };
+export { bucketId, categoriesCollectionId, databaseId, endpoint, projectId };
 
 export async function getLoggedInUser() {
   try {

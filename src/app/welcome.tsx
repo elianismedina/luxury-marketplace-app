@@ -47,7 +47,6 @@ export default function WelcomeScreen() {
               Tú y tu carro{"\n"}merecen el mundo.
             </Text>
           </View>
-
           <View style={styles.actions}>
             <Button
               mode="contained"

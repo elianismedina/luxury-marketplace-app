@@ -1,22 +1,20 @@
 import { ActivityIndicator } from "react-native-paper";
 import { useTheme } from "styled-components/native";
 
-import {
-  Badge,
-  BadgeText,
-  BodyText,
-  Card,
-  CenterContainer,
-  PaddedContainer,
-  Row,
-  Spacer,
-  Title,
-} from "@/components/styled";
+import CategoryList from "@/components/CategoryList";
+import ImageCarousel from "@/components/ImageCarousel";
+import SearchBar from "@/components/SearchBar";
+import { CenterContainer, ScrollContainer } from "@/components/styled";
 import { useAuth } from "@/context/AuthContext";
 
 export default function TabOneScreen() {
-  const { user, initializing } = useAuth();
+  const { initializing } = useAuth();
   const theme = useTheme();
+
+  const handleSearch = (query: string) => {
+    // TODO: Implement search functionality
+    console.log("Searching for:", query);
+  };
 
   if (initializing) {
     return (
@@ -27,25 +25,10 @@ export default function TabOneScreen() {
   }
 
   return (
-    <PaddedContainer>
-      <Card elevated>
-        <Row justify="space-between" align="center">
-          <Title color={theme.colors.primary}>Zona Pits</Title>
-          <Badge variant="secondary">
-            <BadgeText>Premium</BadgeText>
-          </Badge>
-        </Row>
-        <BodyText>
-          {user
-            ? `Bienvenido de nuevo, ${user.name || user.email}!`
-            : "Aún no hay sesión activa."}
-        </BodyText>
-        <Spacer size="sm" />
-        <BodyText color={theme.colors.textSecondary}>
-          Aquí podrás explorar vehículos de lujo, gestionar tu garaje y
-          descubrir nuevas oportunidades exclusivas.
-        </BodyText>
-      </Card>
-    </PaddedContainer>
+    <ScrollContainer>
+      <SearchBar onSearch={handleSearch} />
+      <ImageCarousel />
+      <CategoryList />
+    </ScrollContainer>
   );
 }
