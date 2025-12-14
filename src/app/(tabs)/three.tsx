@@ -119,7 +119,7 @@ export default function TabThreeScreen() {
     if (!formData.modelo.trim()) newErrors.modelo = "El modelo es requerido";
     if (!formData.motor.trim()) newErrors.motor = "El motor es requerido";
     if (!formData.cajasCambios.trim())
-      newErrors.cajasCambios = "La caja de cambios es requerida";
+      newErrors.cajasCambios = "La transmisión es requerida";
     if (!formData.fechaVencimientoSOAT.trim())
       newErrors.fechaVencimientoSOAT = "La fecha de vencimiento es requerida";
 
@@ -475,12 +475,12 @@ export default function TabThreeScreen() {
           <TouchableRipple onPress={() => setShowTransmissionMenu(true)}>
             <View pointerEvents="none">
               <TextInput
-                label="Caja de Cambios"
+                label="Transmisión"
                 value={formData.cajasCambios}
                 mode="outlined"
                 error={!!errors.cajasCambios}
                 style={styles.input}
-                placeholder="Seleccione caja de cambios"
+                placeholder="Seleccione transmisión"
                 editable={false}
                 right={<TextInput.Icon icon="chevron-down" />}
               />
@@ -494,7 +494,7 @@ export default function TabThreeScreen() {
               contentContainerStyle={styles.modalContent}
             >
               <Text variant="titleMedium" style={styles.modalTitle}>
-                Seleccione la Caja de Cambios
+                Seleccione la Transmisión
               </Text>
               <FlatList
                 data={TRANSMISSIONS}

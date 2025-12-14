@@ -10,10 +10,12 @@ import {
   View,
 } from "react-native";
 
+import { Sidebar } from "@/components/Sidebar";
 import { useClientOnlyValue } from "@/components/useClientOnlyValue";
 import { useColorScheme } from "@/components/useColorScheme";
 import { useAuth } from "@/context/AuthContext";
 import { theme } from "@/theme/theme";
+import { useState } from "react";
 
 // You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
 function TabBarIcon(props: {
@@ -26,6 +28,7 @@ function TabBarIcon(props: {
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const { user, initializing } = useAuth();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   if (initializing) {
     return (
@@ -36,11 +39,11 @@ export default function TabLayout() {
   }
 
   if (!user) {
-    return <Redirect href="/login" />;
+    return <Redirect href="/welcome" />;
   }
 
   return (
-    <>
+    <View style={{ flex: 1 }}>
       <StatusBar
         barStyle="light-content"
         backgroundColor={theme.colors.primary}
@@ -152,6 +155,12 @@ export default function TabLayout() {
         />
         <Tabs.Screen
           name="five"
+          listeners={{
+            tabPress: (e) => {
+              e.preventDefault();
+              setIsSidebarOpen(true);
+            },
+          }}
           options={{
             title: "Más",
             tabBarIcon: ({ color }) => (
@@ -160,7 +169,11 @@ export default function TabLayout() {
           }}
         />
       </Tabs>
-    </>
+      <Sidebar
+        visible={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+      />
+    </View>
   );
 }
 
