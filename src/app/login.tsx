@@ -1,7 +1,5 @@
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "expo-router";
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -22,298 +20,44 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import Logo from "@/components/Logo";
-import { useAuth } from "@/context/AuthContext";
-import { databaseId, databases, Query } from "@/lib/appwrite";
-
-type AuthTab = "login" | "register";
-
-type PasswordStrength = {
-  score: number; // 0-4
-  label: string;
-  color: string;
-};
-
-const validateEmail = (email: string): boolean => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
-};
-
-const checkIfUserIsAliado = async (userEmail: string): Promise<boolean> => {
-  try {
-    const response = await databases.listDocuments(
-      databaseId,
-      "aliado", // Collection ID de aliados
-      [Query.equal("correoElectronico", userEmail.trim().toLowerCase())]
-    );
-
-    return response.documents.length > 0;
-  } catch (error) {
-    console.error("Error verificando si es aliado:", error);
-    return false;
-  }
-};
-
-const getPasswordStrength = (password: string): PasswordStrength => {
-  let score = 0;
-  if (password.length >= 8) score++;
-  if (password.length >= 12) score++;
-  if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score++;
-  if (/\d/.test(password)) score++;
-  if (/[^a-zA-Z0-9]/.test(password)) score++;
-
-  const labels = ["Muy débil", "Débil", "Aceptable", "Fuerte", "Muy fuerte"];
-  const colors = ["#f44336", "#ff9800", "#ffeb3b", "#8bc34a", "#4caf50"];
-
-  return {
-    score: Math.min(score, 4),
-    label: labels[Math.min(score, 4)],
-    color: colors[Math.min(score, 4)],
-  };
-};
+import { useAuthForm } from "@/hooks/useAuthForm";
 
 export default function AuthScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ tab?: string }>();
   const {
     user,
     initializing,
     loading,
     isConfigured,
-    login,
-    register,
-    logout,
-    recoverPassword,
-    loginWithGoogle,
-  } = useAuth();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
-  const [activeTab, setActiveTab] = useState<AuthTab>("login");
-  const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
-  const [emailTouched, setEmailTouched] = useState(false);
-  const [passwordTouched, setPasswordTouched] = useState(false);
-  const [snackbarVisible, setSnackbarVisible] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState("");
-
-  // Estado para controlar si se acaba de hacer login
-  const [pendingLogin, setPendingLogin] = useState(false);
-
-  useEffect(() => {
-    if (params.tab === "register" || params.tab === "login") {
-      setActiveTab(params.tab);
-    }
-  }, [params.tab]);
-
-  // No redirigir automáticamente - solo al hacer login/registro manual
-
-  const isEmailValid = useMemo(() => validateEmail(email), [email]);
-  const passwordStrength = useMemo(
-    () => getPasswordStrength(password),
-    [password]
-  );
-
-  const loginDisabled = useMemo(
-    () =>
-      activeTab !== "login" ||
-      !isConfigured ||
-      !email.trim() ||
-      !password.trim() ||
-      !isEmailValid ||
-      loading ||
-      initializing ||
-      pendingLogin,
-    [
-      activeTab,
-      isConfigured,
-      email,
-      password,
-      isEmailValid,
-      loading,
-      initializing,
-      pendingLogin,
-    ]
-  );
-
-  const registerDisabled = useMemo(
-    () =>
-      activeTab !== "register" ||
-      !isConfigured ||
-      !email.trim() ||
-      !password.trim() ||
-      !name.trim() ||
-      !isEmailValid ||
-      passwordStrength.score < 2 ||
-      loading ||
-      initializing,
-    [
-      activeTab,
-      isConfigured,
-      email,
-      password,
-      name,
-      isEmailValid,
-      passwordStrength.score,
-      loading,
-      initializing,
-    ]
-  );
-
-  const handleForgotPassword = useCallback(async () => {
-    if (!email.trim()) {
-      Alert.alert(
-        "Correo electrónico requerido",
-        "Por favor ingresa tu correo electrónico para recuperar tu contraseña."
-      );
-      return;
-    }
-    if (!isEmailValid) {
-      Alert.alert(
-        "Correo electrónico inválido",
-        "Por favor ingresa un correo electrónico válido."
-      );
-      return;
-    }
-
-    try {
-      // URL temporal para desarrollo - Appwrite envía el email con userId y secret como parámetros
-      // En producción: registra tu deep link en Appwrite Console → Settings → Platforms
-      const redirectUrl = "https://cloud.appwrite.io/v1/account/recovery";
-      await recoverPassword(email, redirectUrl);
-      Alert.alert(
-        "Correo enviado",
-        `Hemos enviado un enlace de recuperación a ${email}.\n\n1. Revisa tu correo\n2. Abre el enlace en el email\n3. Copia el userId y secret de la URL\n4. Usa el botón "Ya tengo el código" abajo`,
-        [
-          { text: "OK" },
-          {
-            text: "Ya tengo el código",
-            onPress: () => router.push("/reset-password"),
-          },
-        ]
-      );
-    } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "No se pudo enviar el email de recuperación.";
-      Alert.alert("Error", message);
-    }
-  }, [email, isEmailValid, recoverPassword]);
-
-  const handleLogin = useCallback(async () => {
-    try {
-      // Solo cerrar sesión si hay usuario activo
-      if (user) {
-        await logout();
-      }
-    } catch (e) {
-      // Ignorar errores de logout (por ejemplo, si no hay sesión activa)
-    }
-    try {
-      setSnackbarMessage("✓ Sesión iniciada correctamente");
-      setSnackbarVisible(true);
-      await login(email, password);
-      setPendingLogin(true); // Esperar a que el usuario esté disponible
-      if (rememberMe) {
-        // TODO: Guardar preferencia de sesión persistente
-        console.log("Remember me enabled");
-      }
-    } catch (error) {
-      setSnackbarVisible(false);
-      let message =
-        error instanceof Error ? error.message : "No se pudo iniciar sesión.";
-      if (typeof message === "string" && message.includes("Rate limit")) {
-        message =
-          "Has intentado iniciar sesión demasiadas veces. Espera unos segundos e inténtalo de nuevo.";
-      }
-      Alert.alert("Error al iniciar sesión", message);
-    }
-  }, [login, logout, user, email, password, rememberMe, router]);
-
-  // Efecto para redirigir solo cuando el usuario esté disponible
-  useEffect(() => {
-    if (pendingLogin && user && user.email) {
-      (async () => {
-        try {
-          const isAliado = await checkIfUserIsAliado(user.email);
-          const targetRoute = isAliado
-            ? "/(panel-aliado)/dashboard"
-            : "/(clientes)";
-          router.replace(targetRoute);
-        } catch (redirectError) {
-          router.replace("/(clientes)");
-        } finally {
-          setPendingLogin(false);
-        }
-      })();
-    }
-  }, [pendingLogin, user, router]);
-
-  const handleRegister = useCallback(async () => {
-    try {
-      setSnackbarMessage("✓ Cuenta creada correctamente");
-      setSnackbarVisible(true);
-
-      await register(email, password, name);
-
-      // Verificar tipo de usuario después del registro
-      try {
-        console.log("Verificando tipo de usuario después del registro...");
-        const isAliado = await checkIfUserIsAliado(email.trim().toLowerCase());
-        const targetRoute = isAliado
-          ? "/(panel-aliado)/dashboard"
-          : "/(clientes)";
-
-        setTimeout(() => {
-          router.replace(targetRoute);
-        }, 1500);
-      } catch (redirectError) {
-        console.error("Error verificando tipo de usuario:", redirectError);
-        setTimeout(() => {
-          router.replace("/(clientes)");
-        }, 1500);
-      }
-    } catch (error) {
-      setSnackbarVisible(false);
-      const message =
-        error instanceof Error
-          ? error.message
-          : "No se pudo completar el registro.";
-      Alert.alert("Error al registrar", message);
-    }
-  }, [register, email, password, name, router]);
-
-  const handleLogout = useCallback(async () => {
-    try {
-      await logout();
-      Alert.alert("Sesión cerrada", "Has cerrado sesión correctamente.");
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "No se pudo cerrar la sesión.";
-      Alert.alert("Error al cerrar sesión", message);
-    }
-  }, [logout]);
-
-  const handleGoogleLogin = useCallback(async () => {
-    console.log("handleGoogleLogin: Button clicked");
-    try {
-      console.log("handleGoogleLogin: Calling loginWithGoogle...");
-      await loginWithGoogle();
-      console.log("handleGoogleLogin: loginWithGoogle completed");
-
-      // Show success message and redirect
-      setSnackbarMessage("✓ Sesión iniciada con Google");
-      setSnackbarVisible(true);
-    } catch (error) {
-      console.error("handleGoogleLogin: Error caught:", error);
-      setSnackbarVisible(false);
-      const message =
-        error instanceof Error
-          ? error.message
-          : "No se pudo iniciar sesión con Google.";
-      Alert.alert("Error", message);
-    }
-  }, [loginWithGoogle, router]);
+    email,
+    setEmail,
+    password,
+    setPassword,
+    name,
+    setName,
+    activeTab,
+    setActiveTab,
+    showPassword,
+    setShowPassword,
+    rememberMe,
+    setRememberMe,
+    emailTouched,
+    setEmailTouched,
+    passwordTouched,
+    setPasswordTouched,
+    snackbarVisible,
+    setSnackbarVisible,
+    snackbarMessage,
+    isEmailValid,
+    passwordStrength,
+    loginDisabled,
+    registerDisabled,
+    handleForgotPassword,
+    handleLogin,
+    handleRegister,
+    handleLogout,
+    handleGoogleLogin,
+  } = useAuthForm();
 
   if (initializing && !user) {
     return (
@@ -355,7 +99,7 @@ export default function AuthScreen() {
             <SegmentedButtons
               style={styles.tabs}
               value={activeTab}
-              onValueChange={(value) => setActiveTab(value as AuthTab)}
+              onValueChange={(value) => setActiveTab(value as "login" | "register")}
               buttons={[
                 {
                   value: "login",
@@ -499,6 +243,7 @@ export default function AuthScreen() {
                   disabled={loginDisabled}
                   loading={loading}
                   style={styles.button}
+                  testID="login-button"
                 >
                   Iniciar sesión
                 </Button>
@@ -515,14 +260,12 @@ export default function AuthScreen() {
                 </Button>
               )}
 
-              {/* OAuth Divider */}
               <View style={styles.divider}>
                 <View style={styles.dividerLine} />
                 <Text style={styles.dividerText}>O continúa con</Text>
                 <View style={styles.dividerLine} />
               </View>
 
-              {/* Google Login Button */}
               <Button
                 mode="outlined"
                 onPress={handleGoogleLogin}
