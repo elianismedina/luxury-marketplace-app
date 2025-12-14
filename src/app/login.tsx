@@ -2,7 +2,6 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Alert,
-  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -22,9 +21,8 @@ import {
 } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import Logo from "@/components/Logo";
 import { useAuth } from "@/context/AuthContext";
-
-const logoImage = require("../../assets/images/zonaPitsLogo2.png");
 
 type AuthTab = "login" | "register";
 
@@ -291,11 +289,7 @@ export default function AuthScreen() {
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.root}>
             <View style={styles.logoContainer}>
-              <Image
-                source={logoImage}
-                style={styles.logo}
-                resizeMode="contain"
-              />
+              <Logo width={120} height={120} />
             </View>
 
             <View style={styles.statusHeader}>
@@ -578,10 +572,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 4,
     gap: 8,
-  },
-  logo: {
-    width: 120,
-    height: 120,
   },
   statusHeader: {
     flexDirection: "row",
