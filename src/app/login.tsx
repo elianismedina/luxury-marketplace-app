@@ -164,13 +164,16 @@ export default function AuthScreen() {
   const handleForgotPassword = useCallback(async () => {
     if (!email.trim()) {
       Alert.alert(
-        "Email requerido",
-        "Por favor ingresa tu email para recuperar tu contraseña."
+        "Correo electrónico requerido",
+        "Por favor ingresa tu correo electrónico para recuperar tu contraseña."
       );
       return;
     }
     if (!isEmailValid) {
-      Alert.alert("Email inválido", "Por favor ingresa un email válido.");
+      Alert.alert(
+        "Correo electrónico inválido",
+        "Por favor ingresa un correo electrónico válido."
+      );
       return;
     }
 
@@ -180,7 +183,7 @@ export default function AuthScreen() {
       const redirectUrl = "https://cloud.appwrite.io/v1/account/recovery";
       await recoverPassword(email, redirectUrl);
       Alert.alert(
-        "Email enviado",
+        "Correo enviado",
         `Hemos enviado un enlace de recuperación a ${email}.\n\n1. Revisa tu correo\n2. Abre el enlace en el email\n3. Copia el userId y secret de la URL\n4. Usa el botón "Ya tengo el código" abajo`,
         [
           { text: "OK" },
@@ -332,8 +335,8 @@ export default function AuthScreen() {
             <View style={styles.form}>
               <View>
                 <TextInput
-                  label="Email"
-                  placeholder="tu@email.com"
+                  label="Correo electrónico"
+                  placeholder="tu@correo.com"
                   value={email}
                   onChangeText={setEmail}
                   onBlur={() => setEmailTouched(true)}
@@ -351,12 +354,12 @@ export default function AuthScreen() {
                 />
                 {emailTouched && email.length > 0 && !isEmailValid && (
                   <HelperText type="error" visible>
-                    Por favor ingresa un email válido
+                    Por favor ingresa un correo electrónico válido
                   </HelperText>
                 )}
                 {emailTouched && isEmailValid && (
                   <HelperText type="info" visible style={styles.successText}>
-                    ✓ Email válido
+                    ✓ Correo electrónico válido
                   </HelperText>
                 )}
               </View>
@@ -410,7 +413,7 @@ export default function AuthScreen() {
 
               {activeTab === "register" ? (
                 <TextInput
-                  label="Nombre completo"
+                  label="Nombre"
                   placeholder="Tu nombre"
                   value={name}
                   onChangeText={setName}
@@ -436,7 +439,7 @@ export default function AuthScreen() {
                       style={styles.checkboxLabel}
                       onPress={() => setRememberMe(!rememberMe)}
                     >
-                      Mantenerme conectado
+                      Recordarme
                     </Text>
                   </View>
                   <Button
@@ -494,6 +497,34 @@ export default function AuthScreen() {
               >
                 Continuar con Google
               </Button>
+
+              {activeTab === "register" && (
+                <View style={styles.aliadoContainer}>
+                  <Text style={styles.aliadoText}>
+                    ¿Eres un taller, vendes repuestos y accesorios o prestas
+                    servicios?
+                  </Text>
+                  <Button
+                    mode="text"
+                    onPress={() => {
+                      // Aquí iría la navegación al formulario de registro de aliados
+                      // Por ahora, solo un alert o log
+                      Alert.alert(
+                        "Próximamente",
+                        "El registro de aliados estará disponible pronto."
+                      );
+                    }}
+                    textColor="#FF0000"
+                    style={styles.registerAliadoButton}
+                    labelStyle={{
+                      fontWeight: "bold",
+                      textDecorationLine: "underline",
+                    }}
+                  >
+                    Registrate como Aliado Zona Pits
+                  </Button>
+                </View>
+              )}
 
               {user ? (
                 <Button
@@ -634,6 +665,7 @@ const styles = StyleSheet.create({
   checkboxLabel: {
     fontSize: 14,
     marginLeft: 4,
+    color: "#FFFFFF",
   },
   forgotButton: {
     alignSelf: "flex-start",
@@ -641,5 +673,17 @@ const styles = StyleSheet.create({
   },
   snackbar: {
     backgroundColor: "#10B981",
+  },
+  aliadoContainer: {
+    marginTop: 20,
+    alignItems: "center",
+    gap: 4,
+  },
+  aliadoText: {
+    color: "#9CA3AF",
+    fontSize: 14,
+  },
+  registerAliadoButton: {
+    marginTop: -4,
   },
 });
