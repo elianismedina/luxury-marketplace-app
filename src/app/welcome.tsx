@@ -1,7 +1,6 @@
 import { useRouter } from "expo-router";
 import { useEffect } from "react";
 import {
-  Image,
   ImageBackground,
   Platform,
   StatusBar,
@@ -12,10 +11,10 @@ import {
 import { Button } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import Logo from "@/components/Logo";
 import { useAuth } from "@/context/AuthContext";
 
 const introImage = require("../../assets/images/IntroImage.webp");
-const logoImage = require("../../assets/images/zonaPitsLogo2.png");
 
 export default function WelcomeScreen() {
   const router = useRouter();
@@ -43,13 +42,9 @@ export default function WelcomeScreen() {
         />
         <View style={styles.overlay}>
           <View style={styles.content}>
-            <Image
-              source={logoImage}
-              style={styles.logo}
-              resizeMode="contain"
-            />
+            <Logo width="100%" height="100%" style={styles.logo} />
             <Text style={styles.tagline}>
-              Tu y tu carro{"\n"}merecen el mundo.
+              Tú y tu carro{"\n"}merecen el mundo.
             </Text>
           </View>
 
@@ -104,7 +99,7 @@ const styles = StyleSheet.create({
     maxWidth: 260,
     aspectRatio: 1,
     marginTop: 32,
-    marginBottom: -80,
+    marginBottom: 4,
   },
   tagline: {
     color: "#ffffff",

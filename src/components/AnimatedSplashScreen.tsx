@@ -1,3 +1,4 @@
+import { useAudioPlayer } from "expo-audio";
 import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect, useState } from "react";
 import { Animated, StyleSheet } from "react-native";
@@ -13,9 +14,20 @@ export const AnimatedSplashScreen: React.FC<AnimatedSplashScreenProps> = ({
 }) => {
   const [animation] = useState(new Animated.Value(1));
   const [scale] = useState(new Animated.Value(1));
+  const player = useAudioPlayer(
+    require("../../assets/audio/LamborginiSound.mp4")
+  );
 
   useEffect(() => {
     if (!triggerAnimation) return;
+
+    const playSound = () => {
+      try {
+        player.play();
+      } catch (error) {
+        console.error("Failed to play splash sound:", error);
+      }
+    };
 
     // 1. Start with opacity 1 (visible)
     // 2. Animate scale/opacity
@@ -23,6 +35,8 @@ export const AnimatedSplashScreen: React.FC<AnimatedSplashScreenProps> = ({
       // Hide native splash screen immediately when this component mounts
       // ensuring seamless transition if the image aligns.
       await SplashScreen.hideAsync();
+
+      playSound();
 
       Animated.sequence([
         // Optional: "Theme" pause
@@ -57,17 +71,22 @@ export const AnimatedSplashScreen: React.FC<AnimatedSplashScreenProps> = ({
     // Let's go with a simple Fade Out for reliability, with a slight scale up of logo.
 
     SplashScreen.hideAsync().then(() => {
-      Animated.parallel([
-        Animated.timing(animation, {
-          toValue: 0,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(scale, {
-          toValue: 1.5,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
+      playSound();
+
+      Animated.sequence([
+        Animated.delay(3000),
+        Animated.parallel([
+          Animated.timing(animation, {
+            toValue: 0,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(scale, {
+            toValue: 1.5,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+        ]),
       ]).start(() => {
         onAnimationFinish();
       });
