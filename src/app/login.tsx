@@ -23,6 +23,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import Logo from "@/components/Logo";
 import { useAuth } from "@/context/AuthContext";
+import { databaseId, databases, Query } from "@/lib/appwrite";
 
 type AuthTab = "login" | "register";
 
@@ -35,6 +36,21 @@ type PasswordStrength = {
 const validateEmail = (email: string): boolean => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email);
+};
+
+const checkIfUserIsAliado = async (userEmail: string): Promise<boolean> => {
+  try {
+    const response = await databases.listDocuments(
+      databaseId,
+      "aliado", // Collection ID de aliados
+      [Query.equal("correoElectronico", userEmail.trim().toLowerCase())]
+    );
+
+    return response.documents.length > 0;
+  } catch (error) {
+    console.error("Error verificando si es aliado:", error);
+    return false;
+  }
 };
 
 const getPasswordStrength = (password: string): PasswordStrength => {
@@ -79,7 +95,9 @@ export default function AuthScreen() {
   const [passwordTouched, setPasswordTouched] = useState(false);
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
-  const [shouldRedirect, setShouldRedirect] = useState(false);
+
+  // Estado para controlar si se acaba de hacer login
+  const [pendingLogin, setPendingLogin] = useState(false);
 
   useEffect(() => {
     if (params.tab === "register" || params.tab === "login") {
@@ -87,27 +105,7 @@ export default function AuthScreen() {
     }
   }, [params.tab]);
 
-  useEffect(() => {
-    console.log("Navigation useEffect:", {
-      initializing,
-      hasUser: !!user,
-      shouldRedirect,
-    });
-
-    if (!initializing && user && shouldRedirect) {
-      // Delay para permitir que el Snackbar se muestre antes de redirigir
-      console.log("Navigation: Scheduling redirect to /(tabs) in 1.8s");
-      const timer = setTimeout(() => {
-        console.log("Navigation: Redirecting to /(tabs)");
-        router.replace("/(tabs)");
-      }, 1800);
-      return () => clearTimeout(timer);
-    } else if (!initializing && user && !shouldRedirect) {
-      // Si el usuario ya existía (no es un nuevo login), redirigir inmediatamente
-      console.log("Navigation: Immediate redirect to /(tabs)");
-      router.replace("/(tabs)");
-    }
-  }, [initializing, user, router, shouldRedirect]);
+  // No redirigir automáticamente - solo al hacer login/registro manual
 
   const isEmailValid = useMemo(() => validateEmail(email), [email]);
   const passwordStrength = useMemo(
@@ -123,7 +121,8 @@ export default function AuthScreen() {
       !password.trim() ||
       !isEmailValid ||
       loading ||
-      initializing,
+      initializing ||
+      pendingLogin,
     [
       activeTab,
       isConfigured,
@@ -132,6 +131,7 @@ export default function AuthScreen() {
       isEmailValid,
       loading,
       initializing,
+      pendingLogin,
     ]
   );
 
@@ -202,33 +202,78 @@ export default function AuthScreen() {
 
   const handleLogin = useCallback(async () => {
     try {
+      // Solo cerrar sesión si hay usuario activo
+      if (user) {
+        await logout();
+      }
+    } catch (e) {
+      // Ignorar errores de logout (por ejemplo, si no hay sesión activa)
+    }
+    try {
       setSnackbarMessage("✓ Sesión iniciada correctamente");
       setSnackbarVisible(true);
-      setShouldRedirect(true);
-
       await login(email, password);
+      setPendingLogin(true); // Esperar a que el usuario esté disponible
       if (rememberMe) {
         // TODO: Guardar preferencia de sesión persistente
         console.log("Remember me enabled");
       }
     } catch (error) {
-      setShouldRedirect(false);
       setSnackbarVisible(false);
-      const message =
+      let message =
         error instanceof Error ? error.message : "No se pudo iniciar sesión.";
+      if (typeof message === "string" && message.includes("Rate limit")) {
+        message =
+          "Has intentado iniciar sesión demasiadas veces. Espera unos segundos e inténtalo de nuevo.";
+      }
       Alert.alert("Error al iniciar sesión", message);
     }
-  }, [login, email, password, rememberMe]);
+  }, [login, logout, user, email, password, rememberMe, router]);
+
+  // Efecto para redirigir solo cuando el usuario esté disponible
+  useEffect(() => {
+    if (pendingLogin && user && user.email) {
+      (async () => {
+        try {
+          const isAliado = await checkIfUserIsAliado(user.email);
+          const targetRoute = isAliado
+            ? "/(panel-aliado)/dashboard"
+            : "/(clientes)";
+          router.replace(targetRoute);
+        } catch (redirectError) {
+          router.replace("/(clientes)");
+        } finally {
+          setPendingLogin(false);
+        }
+      })();
+    }
+  }, [pendingLogin, user, router]);
 
   const handleRegister = useCallback(async () => {
     try {
       setSnackbarMessage("✓ Cuenta creada correctamente");
       setSnackbarVisible(true);
-      setShouldRedirect(true);
 
       await register(email, password, name);
+
+      // Verificar tipo de usuario después del registro
+      try {
+        console.log("Verificando tipo de usuario después del registro...");
+        const isAliado = await checkIfUserIsAliado(email.trim().toLowerCase());
+        const targetRoute = isAliado
+          ? "/(panel-aliado)/dashboard"
+          : "/(clientes)";
+
+        setTimeout(() => {
+          router.replace(targetRoute);
+        }, 1500);
+      } catch (redirectError) {
+        console.error("Error verificando tipo de usuario:", redirectError);
+        setTimeout(() => {
+          router.replace("/(clientes)");
+        }, 1500);
+      }
     } catch (error) {
-      setShouldRedirect(false);
       setSnackbarVisible(false);
       const message =
         error instanceof Error
@@ -236,7 +281,7 @@ export default function AuthScreen() {
           : "No se pudo completar el registro.";
       Alert.alert("Error al registrar", message);
     }
-  }, [register, email, password, name]);
+  }, [register, email, password, name, router]);
 
   const handleLogout = useCallback(async () => {
     try {
@@ -259,7 +304,6 @@ export default function AuthScreen() {
       // Show success message and redirect
       setSnackbarMessage("✓ Sesión iniciada con Google");
       setSnackbarVisible(true);
-      setShouldRedirect(true);
     } catch (error) {
       console.error("handleGoogleLogin: Error caught:", error);
       setSnackbarVisible(false);
@@ -501,12 +545,7 @@ export default function AuthScreen() {
                   <Button
                     mode="text"
                     onPress={() => {
-                      // Aquí iría la navegación al formulario de registro de aliados
-                      // Por ahora, solo un alert o log
-                      Alert.alert(
-                        "Próximamente",
-                        "El registro de aliados estará disponible pronto."
-                      );
+                      router.push("/(registro-aliado)/registro");
                     }}
                     textColor="#FF0000"
                     style={styles.registerAliadoButton}

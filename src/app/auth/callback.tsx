@@ -28,7 +28,7 @@ export default function AuthCallback() {
         await new Promise((resolve) => setTimeout(resolve, 500));
 
         // Navigate to the main app
-        router.replace("/(tabs)");
+        router.replace("/(clientes)");
       } catch (error) {
         console.error("OAuth callback error:", error);
         // On error, go back to login

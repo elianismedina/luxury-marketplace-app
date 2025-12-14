@@ -234,7 +234,7 @@ export default function TabThreeScreen() {
 
       // Redirigir a Mi Garaje después de un breve delay
       setTimeout(() => {
-        router.push("/(tabs)/four");
+        router.push("/four");
       }, 1500);
     } catch (error: any) {
       console.error("Error al registrar vehículo:", error);
@@ -617,7 +617,7 @@ export default function TabThreeScreen() {
               });
               setErrors({});
               setImageUri(null);
-              router.push("/(tabs)/four");
+              router.push("/four");
             }}
             style={styles.cancelButton}
             contentStyle={styles.buttonContent}

@@ -4,7 +4,12 @@ import { Platform } from "react-native";
 // Use web SDK for web platform, React Native SDK for mobile
 const isWeb = Platform.OS === "web";
 
-let Account: any, Avatars: any, Client: any, Databases: any, Storage: any;
+let Account: any,
+  Avatars: any,
+  Client: any,
+  Databases: any,
+  Storage: any,
+  Query: any;
 
 if (isWeb) {
   // Web SDK
@@ -14,6 +19,7 @@ if (isWeb) {
   Client = appwrite.Client;
   Databases = appwrite.Databases;
   Storage = appwrite.Storage;
+  Query = appwrite.Query;
 } else {
   // React Native SDK
   const rnAppwrite = require("react-native-appwrite");
@@ -22,6 +28,7 @@ if (isWeb) {
   Client = rnAppwrite.Client;
   Databases = rnAppwrite.Databases;
   Storage = rnAppwrite.Storage;
+  Query = rnAppwrite.Query;
 }
 
 const endpoint =
@@ -78,7 +85,14 @@ export const avatars = new Avatars(client);
 export const databases = new Databases(client);
 export const storage = new Storage(client);
 
-export { bucketId, categoriesCollectionId, databaseId, endpoint, projectId };
+export {
+  bucketId,
+  categoriesCollectionId,
+  databaseId,
+  endpoint,
+  projectId,
+  Query,
+};
 
 export async function getLoggedInUser() {
   try {
