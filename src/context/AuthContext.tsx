@@ -10,7 +10,12 @@ import {
 import { Platform } from "react-native";
 import { ID, Models } from "react-native-appwrite";
 
-import { account, getLoggedInUser, isAppwriteConfigured } from "@/lib/appwrite";
+import {
+  account,
+  getLoggedInUser,
+  isAppwriteConfigured,
+  teams,
+} from "@/lib/appwrite";
 
 type User = Models.User<Models.Preferences>;
 
@@ -81,6 +86,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [refresh]
   );
 
+  const USERS_TEAM_ID = "6942bcb8001fdb95f907"; // Reemplaza por el ID real de tu team 'users'
   const register = useCallback(
     async (email: string, password: string, name: string) => {
       if (!isAppwriteConfigured) {
@@ -89,11 +95,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       setLoading(true);
       try {
-        await account.create(ID.unique(), email.trim(), password, name.trim());
+        // 1. Crear cuenta
+        const user = await account.create(
+          ID.unique(),
+          email.trim(),
+          password,
+          name.trim()
+        );
+        // 2. Iniciar sesión
         await account.createEmailPasswordSession({
           email: email.trim(),
           password,
         });
+        // 3. Agregar al team 'users' con rol 'USER'
+        try {
+          await teams.createMembership({
+            teamId: USERS_TEAM_ID,
+            userId: user.$id,
+            roles: ["USER"],
+            email: email.trim(),
+            name: name.trim(),
+          });
+        } catch (err) {
+          // Si ya es miembro, ignorar error
+          if (
+            !(
+              err &&
+              typeof err === "object" &&
+              "message" in err &&
+              (err as any).message.includes("already")
+            )
+          ) {
+            throw err;
+          }
+        }
         await refresh();
       } catch (error) {
         throw error;

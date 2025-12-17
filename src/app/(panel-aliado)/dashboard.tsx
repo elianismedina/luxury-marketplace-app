@@ -5,13 +5,17 @@ import { Button, Card } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import Logo from "@/components/Logo";
+
 import { useAuth } from "@/context/AuthContext";
 
 export default function AliadoDashboardScreen() {
   const router = useRouter();
-  const { logout, loading: authLoading } = useAuth();
+  const { logout, loading: authLoading, user } = useAuth();
   const [perfilCompleto, setPerfilCompleto] = useState(false);
   const [loading, setLoading] = useState(true);
+  // Suponiendo que el backend marca si la contraseña es temporal
+  // Aquí se simula con un flag. Reemplaza esto por la lógica real (por ejemplo, user.prefs.temporaryPassword)
+  const [tienePasswordTemporal, setTienePasswordTemporal] = useState(true);
 
   useEffect(() => {
     checkPerfilEstado();
@@ -19,8 +23,10 @@ export default function AliadoDashboardScreen() {
 
   const checkPerfilEstado = async () => {
     // TODO: Verificar si el perfil del aliado está completo
-    // Por ahora, asumimos que no está completo para mostrar las opciones
     setPerfilCompleto(false);
+    // TODO: Aquí deberías consultar si la contraseña es temporal
+    // Por ejemplo: setTienePasswordTemporal(user?.prefs?.temporaryPassword ?? false);
+    setTienePasswordTemporal(user?.prefs?.temporaryPassword ?? false);
     setLoading(false);
   };
 
@@ -128,31 +134,36 @@ export default function AliadoDashboardScreen() {
                 >
                   Gestionar Sucursales
                 </Button>
-                <Button
-                  mode="outlined"
-                  onPress={() => router.push("./cambiar-password")}
-                  style={styles.editButton}
-                  contentStyle={styles.buttonContent}
-                >
-                  Cambiar Contraseña
-                </Button>
+                {/* Solo mostrar si tiene contraseña temporal */}
+                {tienePasswordTemporal && (
+                  <Button
+                    mode="outlined"
+                    onPress={() => router.push("./cambiar-password")}
+                    style={styles.editButton}
+                    contentStyle={styles.buttonContent}
+                  >
+                    Cambiar Contraseña
+                  </Button>
+                )}
               </View>
             </>
           )}
         </View>
 
-        {/* Botón de cambiar contraseña siempre visible */}
-        <View style={styles.securitySection}>
-          <Button
-            mode="text"
-            onPress={() => router.push("./cambiar-password")}
-            style={styles.passwordButton}
-            textColor="#9CA3AF"
-            icon="lock"
-          >
-            Cambiar Contraseña
-          </Button>
-        </View>
+        {/* Botón de cambiar contraseña solo si tiene contraseña temporal */}
+        {tienePasswordTemporal && (
+          <View style={styles.securitySection}>
+            <Button
+              mode="text"
+              onPress={() => router.push("./cambiar-password")}
+              style={styles.passwordButton}
+              textColor="#9CA3AF"
+              icon="lock"
+            >
+              Cambiar Contraseña
+            </Button>
+          </View>
+        )}
 
         <View style={styles.bottomButtons}>
           <Button

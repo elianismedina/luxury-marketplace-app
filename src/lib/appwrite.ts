@@ -1,3 +1,10 @@
+let Teams: any;
+if (isWeb) {
+  Teams = require("appwrite").Teams;
+} else {
+  Teams = require("react-native-appwrite").Teams;
+}
+export const teams = new Teams(client);
 import Constants from "expo-constants";
 import { Platform } from "react-native";
 
@@ -9,7 +16,8 @@ let Account: any,
   Client: any,
   Databases: any,
   Storage: any,
-  Query: any;
+  Query: any,
+  ID: any;
 
 if (isWeb) {
   // Web SDK
@@ -20,6 +28,7 @@ if (isWeb) {
   Databases = appwrite.Databases;
   Storage = appwrite.Storage;
   Query = appwrite.Query;
+  ID = appwrite.ID;
 } else {
   // React Native SDK
   const rnAppwrite = require("react-native-appwrite");
@@ -29,6 +38,7 @@ if (isWeb) {
   Databases = rnAppwrite.Databases;
   Storage = rnAppwrite.Storage;
   Query = rnAppwrite.Query;
+  ID = rnAppwrite.ID;
 }
 
 const endpoint =
@@ -52,7 +62,7 @@ const bucketId =
   Constants.expoConfig?.extra?.appwriteBucketVehiculosId ??
   "";
 const categoriesCollectionId =
-  process.env.EXPO_PUBLIC_APPWRITE_COLLECTION_CATEGORIES_ID ?? "categoria";
+  process.env.EXPO_PUBLIC_APPWRITE_COLLECTION_CATEGORIA_ID ?? "categoria";
 
 export const isAppwriteConfigured = Boolean(endpoint && projectId && platform);
 
@@ -90,6 +100,7 @@ export {
   categoriesCollectionId,
   databaseId,
   endpoint,
+  ID,
   projectId,
   Query,
 };

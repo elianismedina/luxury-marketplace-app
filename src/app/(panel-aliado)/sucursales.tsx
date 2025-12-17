@@ -22,7 +22,13 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import Logo from "@/components/Logo";
-import { databaseId, databases, isAppwriteConfigured } from "@/lib/appwrite";
+import { useAuth } from "@/context/AuthContext";
+import {
+  databaseId,
+  databases,
+  isAppwriteConfigured,
+  Query,
+} from "@/lib/appwrite";
 
 const SUCURSALES_COLLECTION_ID = "sucursales_aliado";
 
@@ -42,6 +48,7 @@ type SucursalFormData = {
 };
 
 export default function SucursalesScreen() {
+  const { user } = useAuth();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [sucursales, setSucursales] = useState<Sucursal[]>([]);
@@ -58,17 +65,29 @@ export default function SucursalesScreen() {
   const [editingId, setEditingId] = useState<string | null>(null);
 
   useEffect(() => {
-    loadSucursales();
-  }, []);
+    if (user) {
+      loadSucursales();
+    }
+  }, [user]);
 
   const loadSucursales = async () => {
-    if (!isAppwriteConfigured) return;
+    if (!isAppwriteConfigured || !user?.email) return;
 
     try {
-      // TODO: Filtrar por perfil_aliado_id del usuario logueado
+      // Buscar el $id del aliado por el email del usuario logueado
+      const aliadoRes = await databases.listDocuments(databaseId, "aliado", [
+        Query.equal("correoElectronico", user.email.trim().toLowerCase()),
+      ]);
+      if (!aliadoRes.documents.length) {
+        setSucursales([]);
+        return;
+      }
+      const aliadoId = aliadoRes.documents[0].$id;
+      // Filtrar sucursales por el id del aliado actual
       const response = await databases.listDocuments(
         databaseId,
-        SUCURSALES_COLLECTION_ID
+        SUCURSALES_COLLECTION_ID,
+        [Query.equal("aliado", aliadoId)]
       );
       setSucursales(response.documents as Sucursal[]);
     } catch (error) {
@@ -116,8 +135,13 @@ export default function SucursalesScreen() {
     setLoading(true);
 
     try {
-      // TODO: Usar el aliado_id real del usuario logueado
-      const aliadoId = "temp_aliado_id";
+      // Buscar el $id del aliado por el email del usuario logueado
+      const aliadoRes = await databases.listDocuments(databaseId, "aliado", [
+        Query.equal("correoElectronico", user?.email.trim().toLowerCase()),
+      ]);
+      if (!aliadoRes.documents.length)
+        throw new Error("No se encontró el aliado actual");
+      const aliadoId = aliadoRes.documents[0].$id;
 
       // Por ahora usaremos coordenadas por defecto, en el futuro se puede geocodificar la dirección
       const direccionPoint = [4.6097, -74.0817]; // Coordenadas de Bogotá por defecto

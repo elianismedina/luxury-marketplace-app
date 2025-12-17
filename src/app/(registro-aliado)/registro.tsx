@@ -19,6 +19,8 @@ import {
   databaseId,
   databases,
   isAppwriteConfigured,
+  Query,
+  teams,
 } from "@/lib/appwrite";
 
 const ALIADOS_COLLECTION_ID = "aliado";
@@ -85,10 +87,11 @@ export default function RegistroAliadoScreen() {
   const checkEmailExists = async (email: string): Promise<boolean> => {
     try {
       // Verificar si ya existe un aliado con este email
+
       const response = await databases.listDocuments(
         databaseId,
         ALIADOS_COLLECTION_ID,
-        [`correoElectronico = "${email.trim().toLowerCase()}"`]
+        [Query.equal("correoElectronico", email.trim().toLowerCase())]
       );
 
       return response.documents.length > 0;
@@ -201,6 +204,7 @@ export default function RegistroAliadoScreen() {
 
       // 2. Crear cuenta de usuario con contraseña temporal
       const tempPassword = generateTempPassword();
+
       const userResponse = await account.create(
         ID.unique(),
         formData.correoElectronico.trim().toLowerCase(),
@@ -209,6 +213,30 @@ export default function RegistroAliadoScreen() {
       );
 
       console.log("Cuenta de usuario creada:", userResponse);
+
+      // 3. Agregar al team 'aliados' con rol 'ALIADO'
+      const ALIADOS_TEAM_ID = "6942bcc6001056b6c3d8"; // Reemplaza por el ID real de tu team 'aliados'
+      try {
+        await teams.createMembership({
+          teamId: ALIADOS_TEAM_ID,
+          userId: userResponse.$id,
+          roles: ["ALIADO"],
+          email: formData.correoElectronico.trim().toLowerCase(),
+          name: formData.nombre_Encargado.trim(),
+        });
+      } catch (err) {
+        // Si ya es miembro, ignorar error
+        if (
+          !(
+            err &&
+            typeof err === "object" &&
+            "message" in err &&
+            (err as any).message.includes("already")
+          )
+        ) {
+          throw err;
+        }
+      }
 
       Alert.alert(
         "¡Registro Completado!",

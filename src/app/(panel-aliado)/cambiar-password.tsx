@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -13,6 +13,7 @@ import { Button, HelperText, TextInput } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import Logo from "@/components/Logo";
+import { useAuth } from "@/context/AuthContext";
 import { account, isAppwriteConfigured } from "@/lib/appwrite";
 
 type PasswordFormData = {
@@ -22,6 +23,28 @@ type PasswordFormData = {
 };
 
 export default function CambiarPasswordScreen() {
+  const { user, initializing, refresh } = useAuth();
+  // Forzar refresh si no hay usuario
+  useEffect(() => {
+    if (!user && !initializing) {
+      refresh();
+    }
+  }, [user, initializing, refresh]);
+
+  if (initializing || !user) {
+    return (
+      <SafeAreaView
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          backgroundColor: "#121212",
+        }}
+      >
+        <Text style={{ color: "#fff", fontSize: 18 }}>Cargando usuario...</Text>
+      </SafeAreaView>
+    );
+  }
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
@@ -75,6 +98,14 @@ export default function CambiarPasswordScreen() {
 
     if (!isAppwriteConfigured) {
       Alert.alert("Error", "La aplicación no está configurada correctamente");
+      return;
+    }
+
+    if (!user) {
+      Alert.alert(
+        "No autenticado",
+        "Debes iniciar sesión para cambiar tu contraseña."
+      );
       return;
     }
 
