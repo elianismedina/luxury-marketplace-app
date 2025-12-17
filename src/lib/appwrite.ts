@@ -1,10 +1,3 @@
-let Teams: any;
-if (isWeb) {
-  Teams = require("appwrite").Teams;
-} else {
-  Teams = require("react-native-appwrite").Teams;
-}
-export const teams = new Teams(client);
 import Constants from "expo-constants";
 import { Platform } from "react-native";
 
@@ -17,7 +10,8 @@ let Account: any,
   Databases: any,
   Storage: any,
   Query: any,
-  ID: any;
+  ID: any,
+  Teams: any;
 
 if (isWeb) {
   // Web SDK
@@ -29,6 +23,7 @@ if (isWeb) {
   Storage = appwrite.Storage;
   Query = appwrite.Query;
   ID = appwrite.ID;
+  Teams = appwrite.Teams;
 } else {
   // React Native SDK
   const rnAppwrite = require("react-native-appwrite");
@@ -39,6 +34,7 @@ if (isWeb) {
   Storage = rnAppwrite.Storage;
   Query = rnAppwrite.Query;
   ID = rnAppwrite.ID;
+  Teams = rnAppwrite.Teams;
 }
 
 const endpoint =
@@ -89,6 +85,8 @@ if (projectId) {
 if (platform && !isWeb) {
   client.setPlatform(platform);
 }
+
+export const teams = new Teams(client);
 
 export const account = new Account(client);
 export const avatars = new Avatars(client);

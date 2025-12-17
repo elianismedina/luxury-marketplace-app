@@ -20,7 +20,6 @@ import {
   databases,
   isAppwriteConfigured,
   Query,
-  teams,
 } from "@/lib/appwrite";
 
 const ALIADOS_COLLECTION_ID = "aliado";
@@ -214,28 +213,51 @@ export default function RegistroAliadoScreen() {
 
       console.log("Cuenta de usuario creada:", userResponse);
 
-      // 3. Agregar al team 'aliados' con rol 'ALIADO'
-      const ALIADOS_TEAM_ID = "6942bcc6001056b6c3d8"; // Reemplaza por el ID real de tu team 'aliados'
+      // 3. Llamar función Appwrite para agregar al team 'aliados' con rol 'ALIADO'
+      const ALIADOS_TEAM_ID = "6942bcc6001056b6c3d8"; // ID del team 'aliados'
+      const ADD_TO_TEAM_FUNCTION_ID = "6942d4ff001e477fedc0"; // ID de la función Appwrite
       try {
-        await teams.createMembership({
-          teamId: ALIADOS_TEAM_ID,
-          userId: userResponse.$id,
-          roles: ["ALIADO"],
-          email: formData.correoElectronico.trim().toLowerCase(),
-          name: formData.nombre_Encargado.trim(),
+        // Llamada HTTP a la función Appwrite (REST API)
+        const functionEndpoint = `${process.env.EXPO_PUBLIC_APPWRITE_ENDPOINT}/functions/${ADD_TO_TEAM_FUNCTION_ID}/executions`;
+        const response = await fetch(functionEndpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Appwrite-Project": process.env.EXPO_PUBLIC_APPWRITE_PROJECT_ID,
+          },
+          body: JSON.stringify({
+            userId: userResponse.$id,
+            teamId: ALIADOS_TEAM_ID,
+            email: formData.correoElectronico.trim().toLowerCase(),
+            name: formData.nombre_Encargado.trim(),
+            roles: ["ALIADO"],
+          }),
         });
-      } catch (err) {
-        // Si ya es miembro, ignorar error
-        if (
-          !(
-            err &&
-            typeof err === "object" &&
-            "message" in err &&
-            (err as any).message.includes("already")
-          )
-        ) {
-          throw err;
+        const data = await response.json();
+        if (!response.ok || data.error) {
+          throw new Error(data.error || "No se pudo asignar el rol de aliado");
         }
+      } catch (err) {
+        console.error("Error al asignar team via función Appwrite:", err);
+        // No bloquear el registro si falla el team, pero mostrar alerta
+        Alert.alert(
+          "Advertencia",
+          "El usuario fue creado pero no se pudo asignar el rol de aliado automáticamente. Contacte al administrador si el problema persiste."
+        );
+      }
+
+      // 4. Login automático tras registro
+      try {
+        await account.createEmailSession(
+          formData.correoElectronico.trim().toLowerCase(),
+          tempPassword
+        );
+      } catch (err) {
+        console.error("Error en login automático tras registro:", err);
+        Alert.alert(
+          "Advertencia",
+          "El usuario fue creado pero no se pudo iniciar sesión automáticamente. Intente iniciar sesión manualmente."
+        );
       }
 
       Alert.alert(

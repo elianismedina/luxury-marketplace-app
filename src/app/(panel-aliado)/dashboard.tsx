@@ -1,12 +1,16 @@
+import Logo from "@/components/Logo";
+import { useAuth } from "@/context/AuthContext";
+import {
+  databaseId,
+  databases,
+  isAppwriteConfigured,
+  Query,
+} from "@/lib/appwrite";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { Alert, StyleSheet, Text, View } from "react-native";
 import { Button, Card } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-import Logo from "@/components/Logo";
-
-import { useAuth } from "@/context/AuthContext";
 
 export default function AliadoDashboardScreen() {
   const router = useRouter();
@@ -19,15 +23,39 @@ export default function AliadoDashboardScreen() {
 
   useEffect(() => {
     checkPerfilEstado();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   const checkPerfilEstado = async () => {
-    // TODO: Verificar si el perfil del aliado está completo
-    setPerfilCompleto(false);
-    // TODO: Aquí deberías consultar si la contraseña es temporal
-    // Por ejemplo: setTienePasswordTemporal(user?.prefs?.temporaryPassword ?? false);
-    setTienePasswordTemporal(user?.prefs?.temporaryPassword ?? false);
-    setLoading(false);
+    if (!isAppwriteConfigured || !user || !user.email) {
+      setPerfilCompleto(false);
+      setLoading(false);
+      return;
+    }
+    try {
+      // Buscar el $id del aliado por el email del usuario logueado
+      const aliadoRes = await databases.listDocuments(databaseId, "aliado", [
+        Query.equal("correoElectronico", user.email.trim().toLowerCase()),
+      ]);
+      if (!aliadoRes.documents.length) {
+        setPerfilCompleto(false);
+        setLoading(false);
+        return;
+      }
+      const aliadoId = aliadoRes.documents[0].$id;
+      // Buscar perfil_aliado activo para este aliado
+      const perfilRes = await databases.listDocuments(
+        databaseId,
+        "perfil_aliado",
+        [Query.equal("aliado", aliadoId), Query.equal("activo", true)]
+      );
+      setPerfilCompleto(perfilRes.documents.length > 0);
+    } catch (err) {
+      setPerfilCompleto(false);
+    } finally {
+      setTienePasswordTemporal(user?.prefs?.temporaryPassword ?? false);
+      setLoading(false);
+    }
   };
 
   const handleLogout = () => {

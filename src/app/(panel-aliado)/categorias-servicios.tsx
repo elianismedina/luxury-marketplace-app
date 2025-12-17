@@ -209,7 +209,7 @@ type Categoria = {
 };
 
 export default function CategoriasServiciosScreen() {
-  const { user } = useAuth();
+  const { user, initializing, refresh } = useAuth();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
@@ -223,9 +223,29 @@ export default function CategoriasServiciosScreen() {
   );
 
   useEffect(() => {
+    if (!user || !user.email) {
+      // Forzar refresh si el usuario aún no está listo
+      refresh && refresh();
+      return;
+    }
     loadCategorias();
     loadCategoriasSeleccionadas();
-  }, []);
+  }, [user]);
+
+  if (initializing || !user || !user.email) {
+    return (
+      <SafeAreaView
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          backgroundColor: "#121212",
+        }}
+      >
+        <Text style={{ color: "#fff", fontSize: 18 }}>Cargando usuario...</Text>
+      </SafeAreaView>
+    );
+  }
 
   async function loadCategorias() {
     if (!isAppwriteConfigured) return;
