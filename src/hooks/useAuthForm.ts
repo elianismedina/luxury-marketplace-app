@@ -1,22 +1,20 @@
+import { useAuth } from "@/context/AuthContext";
+import { teams } from "@/lib/appwrite";
+import { getPasswordStrength, validateEmail } from "@/lib/authUtils";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Alert } from "react-native";
-import { useAuth } from "@/context/AuthContext";
-import { databaseId, databases, Query } from "@/lib/appwrite";
-import { getPasswordStrength, validateEmail } from "@/lib/authUtils";
 
 type AuthTab = "login" | "register";
 
-const checkIfUserIsAliado = async (userEmail: string): Promise<boolean> => {
+const checkIfUserIsAliado = async (): Promise<boolean> => {
   try {
-    const response = await databases.listDocuments(
-      databaseId,
-      "aliado", // Collection ID de aliados
-      [Query.equal("correoElectronico", userEmail.trim().toLowerCase())]
-    );
-    return response.documents.length > 0;
+    // ID del team de aliados
+    const teamId = "6942bcc6001056b6c3d8";
+    const memberships = await teams.listMemberships(teamId);
+    return memberships.total > 0;
   } catch (error) {
-    console.error("Error verificando si es aliado:", error);
+    console.error("Error verificando team aliado:", error);
     return false;
   }
 };
@@ -179,7 +177,7 @@ export const useAuthForm = () => {
       setSnackbarVisible(true);
       await register(email, password, name);
       try {
-        const isAliado = await checkIfUserIsAliado(email.trim().toLowerCase());
+        const isAliado = await checkIfUserIsAliado();
         const targetRoute = isAliado
           ? "/(panel-aliado)/dashboard"
           : "/(clientes)";
@@ -228,10 +226,10 @@ export const useAuthForm = () => {
   }, [loginWithGoogle]);
 
   useEffect(() => {
-    if (pendingLogin && user && user.email) {
+    if (pendingLogin && user) {
       (async () => {
         try {
-          const isAliado = await checkIfUserIsAliado(user.email);
+          const isAliado = await checkIfUserIsAliado();
           const targetRoute = isAliado
             ? "/(panel-aliado)/dashboard"
             : "/(clientes)";

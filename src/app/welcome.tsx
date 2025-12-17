@@ -1,5 +1,4 @@
 import { useRouter } from "expo-router";
-import { useEffect } from "react";
 import {
   ImageBackground,
   Platform,
@@ -20,11 +19,7 @@ export default function WelcomeScreen() {
   const router = useRouter();
   const { user, initializing } = useAuth();
 
-  useEffect(() => {
-    if (!initializing && user) {
-      router.replace("/(clientes)");
-    }
-  }, [initializing, user, router]);
+  // La redirección automática se maneja en _layout.tsx según el team/rol
 
   return (
     <ImageBackground

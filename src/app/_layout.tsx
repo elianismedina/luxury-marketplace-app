@@ -17,8 +17,10 @@ import { ThemeProvider as StyledThemeProvider } from "styled-components/native";
 import { AnimatedSplashScreen } from "@/components/AnimatedSplashScreen";
 import { useColorScheme } from "@/components/useColorScheme";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
+import { teams } from "@/lib/appwrite";
 import { paperDarkTheme } from "@/theme/paperTheme";
 import { theme } from "@/theme/theme";
+import { usePathname, useRouter } from "expo-router";
 import { useState } from "react";
 
 export {
@@ -70,14 +72,34 @@ function RootLayoutNav() {
   const colorScheme = "dark";
   const [isSplashFinished, setIsSplashFinished] = useState(false);
   const { user, initializing } = useAuth();
+  const router = useRouter();
+  const pathname = usePathname();
+  const [checkedTeam, setCheckedTeam] = useState(false);
 
-  if (initializing && !user) {
-    // If initializing but NO user data/check running, we just render normally
-    // but keep the Splash Screen up via the component below.
-    // However, the original code had an explicit early return for initializing.
-    // We should REMOVE that early return because we want to render the Stack (behind the splash)
-    // so the Router can initialize and we can perform redirects.
-  }
+  useEffect(() => {
+    // Solo redirigir si hay usuario y no estamos inicializando
+    if (!initializing && user && pathname === "/welcome") {
+      // Verificar teams del usuario
+      (async () => {
+        try {
+          // Obtener los teams del usuario
+          const memberships = await teams.listMemberships();
+          const aliadoTeam = memberships.memberships.find(
+            (m) => m.teamId === "6942bcc6001056b6c3d8"
+          );
+          if (aliadoTeam) {
+            router.replace("/(panel-aliado)/dashboard");
+          } else {
+            router.replace("/(clientes)");
+          }
+        } catch (err) {
+          // Si falla, no redirigir
+        } finally {
+          setCheckedTeam(true);
+        }
+      })();
+    }
+  }, [user, initializing, pathname, router]);
 
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>

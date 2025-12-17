@@ -99,7 +99,9 @@ export default function AuthScreen() {
             <SegmentedButtons
               style={styles.tabs}
               value={activeTab}
-              onValueChange={(value) => setActiveTab(value as "login" | "register")}
+              onValueChange={(value) =>
+                setActiveTab(value as "login" | "register")
+              }
               buttons={[
                 {
                   value: "login",
