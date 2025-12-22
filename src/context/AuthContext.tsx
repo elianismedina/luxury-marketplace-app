@@ -72,6 +72,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       setLoading(true);
       try {
+        // Delete any existing session before creating a new one
+        try {
+          await account.deleteSession("current");
+        } catch (error) {
+          // Ignore errors if no session exists
+        }
+
         await account.createEmailPasswordSession({
           email: email.trim(),
           password,
@@ -102,12 +109,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           password,
           name.trim()
         );
-        // 2. Iniciar sesión
+        // 2. Delete any existing session (shouldn't exist for new accounts, but just in case)
+        try {
+          await account.deleteSession("current");
+        } catch (error) {
+          // Ignore errors if no session exists
+        }
+        // 3. Iniciar sesión
         await account.createEmailPasswordSession({
           email: email.trim(),
           password,
         });
-        // 3. Agregar al team 'users' con rol 'USER'
+        // 4. Agregar al team 'users' con rol 'USER'
         try {
           await teams.createMembership({
             teamId: USERS_TEAM_ID,
@@ -149,6 +162,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       await account.deleteSession("current");
       setUser(null);
+    } catch (error: any) {
+      // Si el error es por scopes/account, igual limpiamos el estado local y NO mostramos alerta
+      if (
+        error?.message?.includes("missing scopes") ||
+        error?.message?.includes("role: guests")
+      ) {
+        setUser(null);
+        // Opcional: puedes mostrar un toast suave, pero NO alert
+      } else {
+        console.error("Error al cerrar sesión:", error);
+        alert(
+          "Hubo un problema al cerrar sesión. Por favor, inténtelo de nuevo o cierre la app."
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -159,7 +186,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!isAppwriteConfigured) {
         throw new Error("Appwrite no está configurado");
       }
-
       setLoading(true);
       try {
         await account.createRecovery(email.trim(), redirectUrl);

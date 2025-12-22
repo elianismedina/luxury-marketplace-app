@@ -108,6 +108,10 @@ function RootLayoutNav() {
           <Stack.Screen name="welcome" options={{ headerShown: false }} />
           <Stack.Screen name="login" options={{ headerShown: false }} />
           <Stack.Screen name="(clientes)" options={{ headerShown: false }} />
+          <Stack.Screen
+            name="(panel-aliado)"
+            options={{ headerShown: false }}
+          />
           <Stack.Screen name="modal" options={{ presentation: "modal" }} />
           <Stack.Screen
             name="edit-vehicle"

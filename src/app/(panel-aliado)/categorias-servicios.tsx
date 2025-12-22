@@ -298,6 +298,10 @@ export default function CategoriasServiciosScreen() {
   }
 
   async function handleSubmit() {
+    console.log(
+      "handleSubmit called with categoriasSeleccionadas:",
+      categoriasSeleccionadas
+    );
     if (categoriasSeleccionadas.length === 0) {
       Alert.alert(
         "Seleccione Categorías",
@@ -327,7 +331,8 @@ export default function CategoriasServiciosScreen() {
         [Query.equal("aliado", aliadoId)]
       );
       if (!perfilQuery.documents.length) {
-        await databases.createDocument(
+        console.log("Creating perfil with categoria:", categoriasSeleccionadas);
+        const newPerfil = await databases.createDocument(
           databaseId,
           PERFIL_ALIADO_COLLECTION_ID,
           ID.unique(),
@@ -336,6 +341,11 @@ export default function CategoriasServiciosScreen() {
             categoria: categoriasSeleccionadas,
             descripcion: "",
           }
+        );
+        console.log(
+          "Created perfil with categoria:",
+          categoriasSeleccionadas,
+          newPerfil
         );
         Alert.alert(
           "¡Perfil Completado!",
@@ -351,15 +361,38 @@ export default function CategoriasServiciosScreen() {
         return;
       } else {
         const perfilAliadoId = perfilQuery.documents[0].$id;
-        await databases.updateDocument(
-          databaseId,
-          PERFIL_ALIADO_COLLECTION_ID,
-          perfilAliadoId,
-          {
-            categoria: categoriasSeleccionadas,
-            descripcion: "",
-          }
-        );
+        console.log("Updating perfil with categoria:", categoriasSeleccionadas);
+        try {
+          const updatedPerfil = await databases.updateDocument(
+            databaseId,
+            PERFIL_ALIADO_COLLECTION_ID,
+            perfilAliadoId,
+            {
+              categoria: categoriasSeleccionadas,
+              descripcion: "",
+            }
+          );
+          console.log(
+            "Updated perfil with categoria:",
+            categoriasSeleccionadas,
+            updatedPerfil
+          );
+        } catch (updateError) {
+          console.error("Error updating perfil:", updateError);
+          // Try to create a new document if update fails
+          console.log("Attempting to create new perfil document");
+          const newPerfil = await databases.createDocument(
+            databaseId,
+            PERFIL_ALIADO_COLLECTION_ID,
+            ID.unique(),
+            {
+              aliado: aliadoId,
+              categoria: categoriasSeleccionadas,
+              descripcion: "",
+            }
+          );
+          console.log("Created new perfil document:", newPerfil);
+        }
         Alert.alert(
           "¡Perfil Completado!",
           `Ha seleccionado ${categoriasSeleccionadas.length} categoría(s) de servicios. Su perfil está listo para ser revisado por nuestro equipo.`,

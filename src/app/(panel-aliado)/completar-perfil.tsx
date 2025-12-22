@@ -1,6 +1,6 @@
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Alert,
   Image,
@@ -16,11 +16,13 @@ import { Button, Card, HelperText, TextInput } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import Logo from "@/components/Logo";
+import { useAuth } from "@/context/AuthContext";
 import {
   bucketId,
   databaseId,
   databases,
   isAppwriteConfigured,
+  Query,
   storage,
 } from "@/lib/appwrite";
 
@@ -34,16 +36,68 @@ type PerfilFormData = {
 
 export default function CompletarPerfilScreen() {
   const router = useRouter();
+  const { user, initializing } = useAuth();
   const [loading, setLoading] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
-
   const [formData, setFormData] = useState<PerfilFormData>({
     descripcion: "",
     sitio_web: "",
     logo_url: undefined,
   });
-
   const [errors, setErrors] = useState<Partial<PerfilFormData>>({});
+
+  // Load existing perfil if available
+  useEffect(() => {
+    const loadExistingPerfil = async () => {
+      if (!isAppwriteConfigured || !user || !user.email) return;
+
+      try {
+        // Find aliado
+        const aliadoRes = await databases.listDocuments(databaseId, "aliado", [
+          Query.equal("correoElectronico", user.email.trim().toLowerCase()),
+        ]);
+        if (!aliadoRes.documents.length) return;
+
+        const aliadoId = aliadoRes.documents[0].$id;
+
+        // Find existing perfil_aliado
+        const perfilRes = await databases.listDocuments(
+          databaseId,
+          PERFIL_ALIADO_COLLECTION_ID,
+          [Query.equal("aliado", aliadoId), Query.equal("activo", true)]
+        );
+
+        if (perfilRes.documents.length > 0) {
+          const perfil = perfilRes.documents[0];
+          setFormData({
+            descripcion: perfil.descripcion || "",
+            sitio_web: perfil.sitio_web || "",
+            logo_url: perfil.logo_url || undefined,
+          });
+        }
+      } catch (error) {
+        console.error("Error loading existing perfil:", error);
+      }
+    };
+
+    loadExistingPerfil();
+  }, [user]);
+
+  // Wait for authentication to initialize
+  if (initializing) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>Cargando...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Don't render anything if no user (redirect will happen via useEffect)
+  if (!user) {
+    return null;
+  }
 
   const validateForm = (): boolean => {
     const newErrors: Partial<PerfilFormData> = {};
@@ -131,39 +185,80 @@ export default function CompletarPerfilScreen() {
     setLoading(true);
 
     try {
-      // TODO: Aquí necesitas el aliado_id del usuario logueado
-      // Por ahora uso un ID temporal
-      const aliadoId = "temp_aliado_id";
+      // Buscar el aliado por el email del usuario logueado
+      if (!user || !user.email) {
+        throw new Error("No se encontró el usuario actual");
+      }
+      let aliadoRes = await databases.listDocuments(databaseId, "aliado", [
+        Query.equal("correoElectronico", user.email.trim().toLowerCase()),
+      ]);
+      let aliadoId;
+      if (!aliadoRes.documents.length) {
+        // Crear documento aliado automáticamente
+        const nuevoAliado = await databases.createDocument(
+          databaseId,
+          "aliado",
+          ID.unique(),
+          {
+            correoElectronico: user.email.trim().toLowerCase(),
+            nombreAliado: user.name || "Aliado",
+            nombre_Encargado: user.name || "Encargado",
+            // Agrega aquí otros campos requeridos por la colección aliado
+          }
+        );
+        aliadoId = nuevoAliado.$id;
+      } else {
+        aliadoId = aliadoRes.documents[0].$id;
+      }
+
+      // Check if perfil_aliado already exists
+      const existingPerfilRes = await databases.listDocuments(
+        databaseId,
+        PERFIL_ALIADO_COLLECTION_ID,
+        [Query.equal("aliado", aliadoId), Query.equal("activo", true)]
+      );
 
       const perfilData = {
+        aliado: aliadoId,
         descripcion: formData.descripcion.trim(),
         sitio_web: formData.sitio_web.trim() || null,
         logo_url: formData.logo_url || null,
         activo: true,
       };
 
-      const response = await databases.createDocument(
-        databaseId,
-        PERFIL_ALIADO_COLLECTION_ID,
-        ID.unique(),
-        perfilData
-      );
+      if (existingPerfilRes.documents.length > 0) {
+        // Update existing perfil
+        await databases.updateDocument(
+          databaseId,
+          PERFIL_ALIADO_COLLECTION_ID,
+          existingPerfilRes.documents[0].$id,
+          perfilData
+        );
+      } else {
+        // Create new perfil
+        await databases.createDocument(
+          databaseId,
+          PERFIL_ALIADO_COLLECTION_ID,
+          ID.unique(),
+          perfilData
+        );
+      }
 
-      console.log("Perfil creado:", response);
+      console.log("Perfil guardado");
 
       Alert.alert(
-        "¡Perfil Creado!",
+        "¡Perfil Guardado!",
         "Su perfil básico ha sido guardado. Ahora puede agregar sucursales y servicios.",
         [
           {
-            text: "Continuar",
-            onPress: () => router.push("./sucursales"),
+            text: "Ir al Dashboard",
+            onPress: () => router.replace("/(panel-aliado)/dashboard"),
           },
         ]
       );
     } catch (error) {
-      console.error("Error creating profile:", error);
-      Alert.alert("Error", "No se pudo crear el perfil. Intente nuevamente.");
+      console.error("Error saving profile:", error);
+      Alert.alert("Error", "No se pudo guardar el perfil. Intente nuevamente.");
     } finally {
       setLoading(false);
     }
@@ -376,5 +471,15 @@ const styles = StyleSheet.create({
   },
   buttonContent: {
     height: 50,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#121212",
+  },
+  loadingText: {
+    color: "#FFFFFF",
+    fontSize: 18,
   },
 });

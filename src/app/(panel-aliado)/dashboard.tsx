@@ -6,29 +6,87 @@ import {
   isAppwriteConfigured,
   Query,
 } from "@/lib/appwrite";
-import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
-import { Alert, StyleSheet, Text, View } from "react-native";
-import { Button, Card } from "react-native-paper";
+import { useFocusEffect, useRouter } from "expo-router";
+import React, { useEffect, useState } from "react";
+import { Alert, BackHandler, StyleSheet, Text, View } from "react-native";
+import { Button, Card, IconButton } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function AliadoDashboardScreen() {
   const router = useRouter();
-  const { logout, loading: authLoading, user } = useAuth();
-  const [perfilCompleto, setPerfilCompleto] = useState(false);
+  const { logout, loading: authLoading, user, initializing } = useAuth();
+  const [hasPerfil, setHasPerfil] = useState(false);
+  const [hasSucursales, setHasSucursales] = useState(false);
+  const [hasServicios, setHasServicios] = useState(false);
   const [loading, setLoading] = useState(true);
   // Suponiendo que el backend marca si la contraseña es temporal
   // Aquí se simula con un flag. Reemplaza esto por la lógica real (por ejemplo, user.prefs.temporaryPassword)
   const [tienePasswordTemporal, setTienePasswordTemporal] = useState(true);
 
+  // Redirect to welcome if no user (after initialization)
   useEffect(() => {
-    checkPerfilEstado();
+    if (!initializing && !user) {
+      router.replace("/welcome");
+    }
+  }, [initializing, user, router]);
+
+  // Handle back button press (only if user exists)
+  useEffect(() => {
+    if (!user) return;
+
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      () => {
+        // Navigate to root to exit the aliado panel
+        router.replace("/");
+        return true; // Prevent default behavior
+      }
+    );
+
+    return () => backHandler.remove();
+  }, [router, user]);
+
+  // Also refresh when screen is focused (e.g., after completing perfil)
+  useFocusEffect(
+    React.useCallback(() => {
+      console.log("useFocusEffect triggered - checking perfil estado");
+      if (user && !initializing) { // Only check perfil if user exists and not initializing
+        checkPerfilEstado();
+      }
+    }, [user, initializing])
+  );
+
+  // Still run on mount/user change for initial load
+  useEffect(() => {
+    if (user && !initializing) { // Only check perfil if user exists and not initializing
+      checkPerfilEstado();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, initializing]);
+
+  // Wait for authentication to initialize
+  if (initializing) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>Cargando...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Don't render anything if no user (redirect will happen via useEffect)
+  if (!user) {
+    return null;
+  }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const checkPerfilEstado = async () => {
     if (!isAppwriteConfigured || !user || !user.email) {
-      setPerfilCompleto(false);
+      setHasPerfil(false);
+      setHasSucursales(false);
+      setHasServicios(false);
       setLoading(false);
       return;
     }
@@ -38,20 +96,60 @@ export default function AliadoDashboardScreen() {
         Query.equal("correoElectronico", user.email.trim().toLowerCase()),
       ]);
       if (!aliadoRes.documents.length) {
-        setPerfilCompleto(false);
+        setHasPerfil(false);
+        setHasSucursales(false);
+        setHasServicios(false);
         setLoading(false);
         return;
       }
       const aliadoId = aliadoRes.documents[0].$id;
-      // Buscar perfil_aliado activo para este aliado
+
+      // Buscar perfil_aliado activo para este aliado con categoria field expandido
       const perfilRes = await databases.listDocuments(
         databaseId,
         "perfil_aliado",
-        [Query.equal("aliado", aliadoId), Query.equal("activo", true)]
+        [
+          Query.equal("aliado", aliadoId),
+          Query.equal("activo", true),
+          Query.select(["*", "categoria.*"]), // Select all fields and expand categoria relationship
+        ]
       );
-      setPerfilCompleto(perfilRes.documents.length > 0);
+
+      let perfilDoc = null;
+      if (perfilRes.documents.length > 0) {
+        perfilDoc = perfilRes.documents[0];
+      }
+      // Buscar al menos una sucursal para este aliado
+      const sucursalRes = await databases.listDocuments(
+        databaseId,
+        "sucursales_aliado",
+        [Query.equal("aliado", aliadoId)]
+      );
+
+      const hasPerfil = perfilRes.documents.length > 0;
+      const hasSucursales = sucursalRes.documents.length > 0;
+      const categoria = perfilDoc?.categoria;
+      const hasServicios =
+        hasPerfil && Array.isArray(categoria) && categoria.length > 0;
+
+      console.log("Dashboard check:", {
+        hasPerfil,
+        hasSucursales,
+        hasServicios,
+        perfilExists: !!perfilDoc,
+        categoria,
+        categoriaType: typeof categoria,
+        isArray: Array.isArray(categoria),
+        categoriaLength: Array.isArray(categoria) ? categoria.length : "N/A",
+      });
+
+      setHasPerfil(hasPerfil);
+      setHasSucursales(hasSucursales);
+      setHasServicios(hasServicios);
     } catch (err) {
-      setPerfilCompleto(false);
+      setHasPerfil(false);
+      setHasSucursales(false);
+      setHasServicios(false);
     } finally {
       setTienePasswordTemporal(user?.prefs?.temporaryPassword ?? false);
       setLoading(false);
@@ -70,7 +168,7 @@ export default function AliadoDashboardScreen() {
         onPress: async () => {
           try {
             await logout();
-            router.replace("/welcome");
+            // Navigation will be handled by the useEffect when user becomes null
           } catch (error) {
             Alert.alert(
               "Error",
@@ -96,17 +194,26 @@ export default function AliadoDashboardScreen() {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         <View style={styles.header}>
-          <Logo width={120} height={120} />
+          <View style={styles.headerTop}>
+            <IconButton
+              icon="arrow-left"
+              size={24}
+              onPress={() => router.replace("/")}
+              style={styles.backButton}
+              iconColor="#FFFFFF"
+            />
+            <Logo width={80} height={80} />
+          </View>
           <Text style={styles.title}>Dashboard Aliado</Text>
           <Text style={styles.subtitle}>
-            {perfilCompleto
+            {hasPerfil && hasSucursales && hasServicios
               ? "Gestiona tu perfil de aliado"
               : "Complete su perfil para activar su cuenta"}
           </Text>
         </View>
 
         <View style={styles.content}>
-          {!perfilCompleto ? (
+          {!hasPerfil ? (
             <>
               <Card style={styles.card}>
                 <Text style={styles.cardTitle}>📋 Completar Perfil</Text>
@@ -133,6 +240,46 @@ export default function AliadoDashboardScreen() {
                   contentStyle={styles.buttonContent}
                 >
                   Completar Perfil
+                </Button>
+              </View>
+            </>
+          ) : !hasSucursales ? (
+            <>
+              <Card style={styles.card}>
+                <Text style={styles.cardTitle}>📍 Agregar Sucursales</Text>
+                <Text style={styles.cardText}>
+                  Agregue al menos una sucursal para su negocio.
+                </Text>
+              </Card>
+
+              <View style={styles.actionButtons}>
+                <Button
+                  mode="contained"
+                  onPress={() => router.push("./sucursales")}
+                  style={styles.completeButton}
+                  contentStyle={styles.buttonContent}
+                >
+                  Agregar Sucursales
+                </Button>
+              </View>
+            </>
+          ) : !hasServicios ? (
+            <>
+              <Card style={styles.card}>
+                <Text style={styles.cardTitle}>🔧 Seleccionar Servicios</Text>
+                <Text style={styles.cardText}>
+                  Seleccione las categorías de servicios que ofrece.
+                </Text>
+              </Card>
+
+              <View style={styles.actionButtons}>
+                <Button
+                  mode="contained"
+                  onPress={() => router.push("./categorias-servicios")}
+                  style={styles.completeButton}
+                  contentStyle={styles.buttonContent}
+                >
+                  Seleccionar Servicios
                 </Button>
               </View>
             </>
@@ -302,10 +449,27 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     width: "100%",
   },
+  headerTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    width: "100%",
+    marginBottom: 16,
+  },
   backButton: {
     borderRadius: 25,
   },
   buttonContent: {
     height: 50,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#121212",
+  },
+  loadingText: {
+    color: "#FFFFFF",
+    fontSize: 18,
   },
 });

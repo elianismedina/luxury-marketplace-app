@@ -248,10 +248,10 @@ export default function RegistroAliadoScreen() {
 
       // 4. Login automático tras registro
       try {
-        await account.createEmailSession(
-          formData.correoElectronico.trim().toLowerCase(),
-          tempPassword
-        );
+        await account.createEmailPasswordSession({
+          email: formData.correoElectronico.trim().toLowerCase(),
+          password: tempPassword,
+        });
       } catch (err) {
         console.error("Error en login automático tras registro:", err);
         Alert.alert(
