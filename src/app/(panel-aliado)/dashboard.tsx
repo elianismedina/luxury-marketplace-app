@@ -8,9 +8,42 @@ import {
 } from "@/lib/appwrite";
 import { useFocusEffect, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
-import { Alert, BackHandler, StyleSheet, Text, View } from "react-native";
-import { Button, Card, IconButton } from "react-native-paper";
+import {
+  Alert,
+  BackHandler,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { Card, IconButton } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+interface GridItemProps {
+  title: string;
+  icon: string;
+  onPress: () => void;
+  color?: string;
+}
+
+const GridItem = ({
+  title,
+  icon,
+  onPress,
+  color = "#FF0000",
+}: GridItemProps) => (
+  <TouchableOpacity
+    style={styles.gridItem}
+    onPress={onPress}
+    activeOpacity={0.7}
+  >
+    <View style={[styles.iconContainer, { backgroundColor: `${color}15` }]}>
+      <IconButton icon={icon} iconColor={color} size={32} />
+    </View>
+    <Text style={styles.gridItemTitle}>{title}</Text>
+  </TouchableOpacity>
+);
 
 export default function AliadoDashboardScreen() {
   const router = useRouter();
@@ -19,8 +52,6 @@ export default function AliadoDashboardScreen() {
   const [hasSucursales, setHasSucursales] = useState(false);
   const [hasServicios, setHasServicios] = useState(false);
   const [loading, setLoading] = useState(true);
-  // Suponiendo que el backend marca si la contraseña es temporal
-  // Aquí se simula con un flag. Reemplaza esto por la lógica real (por ejemplo, user.prefs.temporaryPassword)
   const [tienePasswordTemporal, setTienePasswordTemporal] = useState(true);
 
   // Redirect to welcome if no user (after initialization)
@@ -37,34 +68,28 @@ export default function AliadoDashboardScreen() {
     const backHandler = BackHandler.addEventListener(
       "hardwareBackPress",
       () => {
-        // Navigate to root to exit the aliado panel
         router.replace("/");
-        return true; // Prevent default behavior
+        return true;
       }
     );
 
     return () => backHandler.remove();
   }, [router, user]);
 
-  // Also refresh when screen is focused (e.g., after completing perfil)
   useFocusEffect(
     React.useCallback(() => {
-      console.log("useFocusEffect triggered - checking perfil estado");
-      if (user && !initializing) { // Only check perfil if user exists and not initializing
+      if (user && !initializing) {
         checkPerfilEstado();
       }
     }, [user, initializing])
   );
 
-  // Still run on mount/user change for initial load
   useEffect(() => {
-    if (user && !initializing) { // Only check perfil if user exists and not initializing
+    if (user && !initializing) {
       checkPerfilEstado();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, initializing]);
 
-  // Wait for authentication to initialize
   if (initializing) {
     return (
       <SafeAreaView style={styles.safeArea}>
@@ -75,12 +100,7 @@ export default function AliadoDashboardScreen() {
     );
   }
 
-  // Don't render anything if no user (redirect will happen via useEffect)
-  if (!user) {
-    return null;
-  }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  if (!user) return null;
 
   const checkPerfilEstado = async () => {
     if (!isAppwriteConfigured || !user || !user.email) {
@@ -91,7 +111,6 @@ export default function AliadoDashboardScreen() {
       return;
     }
     try {
-      // Buscar el $id del aliado por el email del usuario logueado
       const aliadoRes = await databases.listDocuments(databaseId, "aliado", [
         Query.equal("correoElectronico", user.email.trim().toLowerCase()),
       ]);
@@ -104,22 +123,19 @@ export default function AliadoDashboardScreen() {
       }
       const aliadoId = aliadoRes.documents[0].$id;
 
-      // Buscar perfil_aliado activo para este aliado con categoria field expandido
       const perfilRes = await databases.listDocuments(
         databaseId,
         "perfil_aliado",
         [
           Query.equal("aliado", aliadoId),
           Query.equal("activo", true),
-          Query.select(["*", "categoria.*"]), // Select all fields and expand categoria relationship
+          Query.select(["*", "categoria.*"]),
         ]
       );
 
-      let perfilDoc = null;
-      if (perfilRes.documents.length > 0) {
-        perfilDoc = perfilRes.documents[0];
-      }
-      // Buscar al menos una sucursal para este aliado
+      let perfilDoc =
+        perfilRes.documents.length > 0 ? perfilRes.documents[0] : null;
+
       const sucursalRes = await databases.listDocuments(
         databaseId,
         "sucursales_aliado",
@@ -131,17 +147,6 @@ export default function AliadoDashboardScreen() {
       const categoria = perfilDoc?.categoria;
       const hasServicios =
         hasPerfil && Array.isArray(categoria) && categoria.length > 0;
-
-      console.log("Dashboard check:", {
-        hasPerfil,
-        hasSucursales,
-        hasServicios,
-        perfilExists: !!perfilDoc,
-        categoria,
-        categoriaType: typeof categoria,
-        isArray: Array.isArray(categoria),
-        categoriaLength: Array.isArray(categoria) ? categoria.length : "N/A",
-      });
 
       setHasPerfil(hasPerfil);
       setHasSucursales(hasSucursales);
@@ -158,22 +163,15 @@ export default function AliadoDashboardScreen() {
 
   const handleLogout = () => {
     Alert.alert("Cerrar Sesión", "¿Está seguro que desea cerrar sesión?", [
-      {
-        text: "Cancelar",
-        style: "cancel",
-      },
+      { text: "Cancelar", style: "cancel" },
       {
         text: "Cerrar Sesión",
         style: "destructive",
         onPress: async () => {
           try {
             await logout();
-            // Navigation will be handled by the useEffect when user becomes null
           } catch (error) {
-            Alert.alert(
-              "Error",
-              "Hubo un problema al cerrar sesión. Inténtelo de nuevo."
-            );
+            Alert.alert("Error", "Hubo un problema al cerrar sesión.");
           }
         },
       },
@@ -183,178 +181,113 @@ export default function AliadoDashboardScreen() {
   if (loading) {
     return (
       <SafeAreaView style={styles.safeArea}>
-        <View style={styles.container}>
+        <View style={styles.loadingContainer}>
           <Text style={styles.loadingText}>Cargando...</Text>
         </View>
       </SafeAreaView>
     );
   }
 
+  const isComplete = hasPerfil && hasSucursales && hasServicios;
+
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <View style={styles.headerTop}>
-            <IconButton
-              icon="arrow-left"
-              size={24}
-              onPress={() => router.replace("/")}
-              style={styles.backButton}
-              iconColor="#FFFFFF"
-            />
-            <Logo width={80} height={80} />
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <View style={styles.container}>
+          <View style={styles.header}>
+            <View style={styles.headerTop}>
+              <Logo width={80} height={80} />
+            </View>
+            <Text style={styles.title}>Panel de Aliado</Text>
+            <View
+              style={[
+                styles.statusBadge,
+                { backgroundColor: isComplete ? "#10B98120" : "#F59E0B20" },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.statusText,
+                  { color: isComplete ? "#10B981" : "#F59E0B" },
+                ]}
+              >
+                {isComplete ? "Cuenta Activa" : "Perfil Incompleto"}
+              </Text>
+            </View>
           </View>
-          <Text style={styles.title}>Dashboard Aliado</Text>
-          <Text style={styles.subtitle}>
-            {hasPerfil && hasSucursales && hasServicios
-              ? "Gestiona tu perfil de aliado"
-              : "Complete su perfil para activar su cuenta"}
-          </Text>
-        </View>
 
-        <View style={styles.content}>
-          {!hasPerfil ? (
-            <>
-              <Card style={styles.card}>
-                <Text style={styles.cardTitle}>📋 Completar Perfil</Text>
-                <Text style={styles.cardText}>
-                  Para activar su cuenta de aliado, complete los siguientes
-                  pasos:
-                </Text>
-                <View style={styles.stepsList}>
-                  <Text style={styles.step}>
-                    1. ✏️ Información básica del negocio
-                  </Text>
-                  <Text style={styles.step}>2. 📍 Agregar sucursales</Text>
-                  <Text style={styles.step}>
-                    3. 🔧 Seleccionar categorías de servicios
-                  </Text>
+          <View style={styles.content}>
+            {!isComplete && (
+              <Card style={styles.alertCard}>
+                <View style={styles.alertHeader}>
+                  <IconButton
+                    icon="alert-circle"
+                    iconColor="#F59E0B"
+                    size={24}
+                  />
+                  <Text style={styles.alertTitle}>Pasos Pendientes</Text>
+                </View>
+                <View style={styles.stepsContainer}>
+                  {!hasPerfil && (
+                    <Text style={styles.stepItem}>
+                      • Información del negocio
+                    </Text>
+                  )}
+                  {!hasSucursales && (
+                    <Text style={styles.stepItem}>• Agregar sucursales</Text>
+                  )}
+                  {!hasServicios && (
+                    <Text style={styles.stepItem}>
+                      • Seleccionar categorías
+                    </Text>
+                  )}
                 </View>
               </Card>
+            )}
 
-              <View style={styles.actionButtons}>
-                <Button
-                  mode="contained"
-                  onPress={() => router.push("./completar-perfil")}
-                  style={styles.completeButton}
-                  contentStyle={styles.buttonContent}
-                >
-                  Completar Perfil
-                </Button>
-              </View>
-            </>
-          ) : !hasSucursales ? (
-            <>
-              <Card style={styles.card}>
-                <Text style={styles.cardTitle}>📍 Agregar Sucursales</Text>
-                <Text style={styles.cardText}>
-                  Agregue al menos una sucursal para su negocio.
-                </Text>
-              </Card>
-
-              <View style={styles.actionButtons}>
-                <Button
-                  mode="contained"
-                  onPress={() => router.push("./sucursales")}
-                  style={styles.completeButton}
-                  contentStyle={styles.buttonContent}
-                >
-                  Agregar Sucursales
-                </Button>
-              </View>
-            </>
-          ) : !hasServicios ? (
-            <>
-              <Card style={styles.card}>
-                <Text style={styles.cardTitle}>🔧 Seleccionar Servicios</Text>
-                <Text style={styles.cardText}>
-                  Seleccione las categorías de servicios que ofrece.
-                </Text>
-              </Card>
-
-              <View style={styles.actionButtons}>
-                <Button
-                  mode="contained"
-                  onPress={() => router.push("./categorias-servicios")}
-                  style={styles.completeButton}
-                  contentStyle={styles.buttonContent}
-                >
-                  Seleccionar Servicios
-                </Button>
-              </View>
-            </>
-          ) : (
-            <>
-              <Card style={styles.card}>
-                <Text style={styles.cardTitle}>✅ Perfil Completado</Text>
-                <Text style={styles.cardText}>
-                  Su perfil está completo y su cuenta de aliado está activa.
-                </Text>
-              </Card>
-
-              <View style={styles.actionButtons}>
-                <Button
-                  mode="outlined"
-                  onPress={() => router.push("./completar-perfil")}
-                  style={styles.editButton}
-                  contentStyle={styles.buttonContent}
-                >
-                  Editar Perfil
-                </Button>
-                <Button
-                  mode="outlined"
-                  onPress={() => router.push("./sucursales")}
-                  style={styles.editButton}
-                  contentStyle={styles.buttonContent}
-                >
-                  Gestionar Sucursales
-                </Button>
-                {/* Solo mostrar si tiene contraseña temporal */}
-                {tienePasswordTemporal && (
-                  <Button
-                    mode="outlined"
-                    onPress={() => router.push("./cambiar-password")}
-                    style={styles.editButton}
-                    contentStyle={styles.buttonContent}
-                  >
-                    Cambiar Contraseña
-                  </Button>
-                )}
-              </View>
-            </>
-          )}
-        </View>
-
-        {/* Botón de cambiar contraseña solo si tiene contraseña temporal */}
-        {tienePasswordTemporal && (
-          <View style={styles.securitySection}>
-            <Button
-              mode="text"
-              onPress={() => router.push("./cambiar-password")}
-              style={styles.passwordButton}
-              textColor="#9CA3AF"
-              icon="lock"
-            >
-              Cambiar Contraseña
-            </Button>
+            <View style={styles.gridContainer}>
+              <GridItem
+                title="Editar Perfil"
+                icon="store-edit"
+                onPress={() => router.push("./completar-perfil")}
+                color="#3B82F6"
+              />
+              <GridItem
+                title="Sucursales"
+                icon="map-marker-radius"
+                onPress={() => router.push("./sucursales")}
+                color="#10B981"
+              />
+              <GridItem
+                title="Servicios"
+                icon="tools"
+                onPress={() => router.push("./servicios")}
+                color="#8B5CF6"
+              />
+              <GridItem
+                title="Categorías"
+                icon="format-list-bulleted-type"
+                onPress={() => router.push("./categorias-servicios")}
+                color="#FF0000"
+              />
+              {tienePasswordTemporal && (
+                <GridItem
+                  title="Contraseña"
+                  icon="lock-reset"
+                  onPress={() => router.push("./cambiar-password")}
+                  color="#F59E0B"
+                />
+              )}
+              <GridItem
+                title="Cerrar Sesión"
+                icon="logout"
+                onPress={handleLogout}
+                color="#EF4444"
+              />
+            </View>
           </View>
-        )}
-
-        <View style={styles.bottomButtons}>
-          <Button
-            mode="contained"
-            onPress={handleLogout}
-            style={styles.logoutButton}
-            buttonColor="#DC2626"
-            textColor="#FFFFFF"
-            icon="logout"
-            loading={authLoading}
-            disabled={authLoading}
-          >
-            Cerrar Sesión
-          </Button>
         </View>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -364,112 +297,106 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#121212",
   },
+  scrollContent: {
+    flexGrow: 1,
+  },
   container: {
     flex: 1,
-    padding: 24,
-  },
-  loadingText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    textAlign: "center",
-    marginTop: 100,
-  },
-  header: {
-    alignItems: "center",
-    marginBottom: 32,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "#FFFFFF",
-    marginTop: 16,
-    marginBottom: 8,
-    textAlign: "center",
-  },
-  subtitle: {
-    fontSize: 16,
-    color: "#9CA3AF",
-    textAlign: "center",
-    lineHeight: 24,
-  },
-  content: {
-    flex: 1,
-  },
-  card: {
-    backgroundColor: "#1E1E1E",
     padding: 20,
-    borderRadius: 12,
-    marginBottom: 24,
-  },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#FFFFFF",
-    marginBottom: 12,
-  },
-  cardText: {
-    fontSize: 14,
-    color: "#9CA3AF",
-    lineHeight: 20,
-    marginBottom: 16,
-  },
-  stepsList: {
-    marginLeft: 8,
-  },
-  step: {
-    fontSize: 14,
-    color: "#FFFFFF",
-    marginBottom: 8,
-    lineHeight: 20,
-  },
-  actionButtons: {
-    gap: 12,
-    marginBottom: 32,
-  },
-  completeButton: {
-    backgroundColor: "#FF0000",
-    borderRadius: 25,
-  },
-  editButton: {
-    borderColor: "#666666",
-    borderRadius: 25,
-  },
-  securitySection: {
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  passwordButton: {
-    borderRadius: 25,
-  },
-  bottomButtons: {
-    alignItems: "center",
-    gap: 12,
-  },
-  logoutButton: {
-    borderRadius: 25,
-    width: "100%",
-  },
-  headerTop: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    width: "100%",
-    marginBottom: 16,
-  },
-  backButton: {
-    borderRadius: 25,
-  },
-  buttonContent: {
-    height: 50,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#121212",
   },
   loadingText: {
     color: "#FFFFFF",
-    fontSize: 18,
+    fontSize: 16,
+  },
+  header: {
+    alignItems: "center",
+    marginBottom: 32,
+    marginTop: 20,
+  },
+  headerTop: {
+    marginBottom: 16,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: "#FFFFFF",
+    marginBottom: 12,
+  },
+  statusBadge: {
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  statusText: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  content: {
+    flex: 1,
+  },
+  alertCard: {
+    backgroundColor: "#1E1E1E",
+    padding: 16,
+    borderRadius: 16,
+    marginBottom: 24,
+    borderLeftWidth: 4,
+    borderLeftColor: "#F59E0B",
+  },
+  alertHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginLeft: -8,
+  },
+  alertTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#FFFFFF",
+  },
+  stepsContainer: {
+    marginTop: 8,
+    paddingLeft: 8,
+  },
+  stepItem: {
+    color: "#9CA3AF",
+    fontSize: 14,
+    marginBottom: 4,
+  },
+  gridContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    gap: 16,
+  },
+  gridItem: {
+    width: "47%",
+    backgroundColor: "#1E1E1E",
+    padding: 20,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  iconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 16,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  gridItemTitle: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "600",
+    textAlign: "center",
   },
 });

@@ -245,17 +245,15 @@ export default function CompletarPerfilScreen() {
       }
 
       console.log("Perfil guardado");
-
-      Alert.alert(
-        "¡Perfil Guardado!",
-        "Su perfil básico ha sido guardado. Ahora puede agregar sucursales y servicios.",
-        [
-          {
-            text: "Ir al Dashboard",
-            onPress: () => router.replace("/(panel-aliado)/dashboard"),
-          },
-        ]
-      );
+      // Navegación automática
+      router.replace("/(panel-aliado)/dashboard");
+      // Mostrar confirmación (opcional, no bloqueante)
+      setTimeout(() => {
+        Alert.alert(
+          "¡Perfil Guardado!",
+          "Su perfil básico ha sido guardado. Ahora puede agregar sucursales y servicios."
+        );
+      }, 500);
     } catch (error) {
       console.error("Error saving profile:", error);
       Alert.alert("Error", "No se pudo guardar el perfil. Intente nuevamente.");

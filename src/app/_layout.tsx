@@ -77,27 +77,71 @@ function RootLayoutNav() {
   const [checkedTeam, setCheckedTeam] = useState(false);
 
   useEffect(() => {
-    // Solo redirigir si hay usuario y no estamos inicializando
-    if (!initializing && user && pathname === "/welcome") {
-      // Verificar teams del usuario
+    if (initializing) return;
+
+    const isPublicRoute = ["/welcome", "/login", "/"].includes(pathname);
+    const isAliadoPath = pathname.includes("(panel-aliado)");
+    const isClientePath = pathname.includes("(clientes)");
+
+    console.log("[RootLayoutNav] Status:", {
+      pathname,
+      isPublicRoute,
+      isAliadoPath,
+      isClientePath,
+      hasUser: !!user,
+      initializing,
+    });
+
+    if (user) {
+      // Si hay usuario, verificamos su rol
       (async () => {
         try {
-          // Obtener los teams del usuario
-          const memberships = await teams.listMemberships();
-          const aliadoTeam = memberships.memberships.find(
-            (m) => m.teamId === "6942bcc6001056b6c3d8"
+          const teamsList = await teams.list();
+          const isAliado = teamsList.teams.some(
+            (t: any) => t.$id === "6942bcc6001056b6c3d8"
           );
-          if (aliadoTeam) {
-            router.replace("/(panel-aliado)/dashboard");
+
+          console.log("[RootLayoutNav] Role check:", {
+            isAliado,
+            totalTeams: teamsList.total,
+          });
+
+          if (isAliado) {
+            // Si es aliado y está en ruta pública o de cliente, redirigir a su panel
+            if (isPublicRoute || isClientePath) {
+              console.log(
+                "[RootLayoutNav] Allied user on wrong route, redirecting to allied dashboard..."
+              );
+              router.replace("/(panel-aliado)/dashboard");
+            }
           } else {
-            router.replace("/(clientes)");
+            // Si no es aliado y está en ruta pública o de aliado, redirigir a clientes
+            if (isPublicRoute || isAliadoPath) {
+              console.log(
+                "[RootLayoutNav] Client user on wrong route, redirecting to client panel..."
+              );
+              router.replace("/(clientes)");
+            }
           }
         } catch (err) {
-          // Si falla, no redirigir
+          console.error("[RootLayoutNav] Error fetching memberships:", err);
+          // Si falla la verificación, al menos permitimos que el usuario se quede
+          // donde está si ya está en una ruta autenticada
+          if (isPublicRoute) {
+            router.replace("/(clientes)"); // Fallback a clientes si está en public
+          }
         } finally {
           setCheckedTeam(true);
         }
       })();
+    } else {
+      // Si no hay usuario y no es ruta pública, redirigir a welcome
+      if (!isPublicRoute && !pathname.includes("(registro-aliado)")) {
+        console.log(
+          "[RootLayoutNav] No user on private route, redirecting to welcome..."
+        );
+        router.replace("/welcome");
+      }
     }
   }, [user, initializing, pathname, router]);
 

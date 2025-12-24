@@ -38,6 +38,13 @@ export default function AliadoLayout() {
           headerShown: false,
         }}
       />
+      <Stack.Screen
+        name="servicios"
+        options={{
+          title: "Servicios Ofrecidos",
+          headerShown: false,
+        }}
+      />
     </Stack>
   );
 }

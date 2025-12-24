@@ -17,7 +17,7 @@ import {
   teams,
 } from "@/lib/appwrite";
 
-type User = Models.User<Models.Preferences>;
+type User = Models.User<Models.Preferences & { temporaryPassword?: boolean }>;
 
 type AuthContextValue = {
   user: User | null;

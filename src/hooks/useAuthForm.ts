@@ -32,6 +32,7 @@ export const useAuthForm = () => {
     logout,
     recoverPassword,
     loginWithGoogle,
+    refresh,
   } = useAuth();
 
   const [email, setEmail] = useState("");
@@ -176,28 +177,45 @@ export const useAuthForm = () => {
       setSnackbarMessage("✓ Cuenta creada correctamente");
       setSnackbarVisible(true);
       await register(email, password, name);
-      try {
-        const isAliado = await checkIfUserIsAliado();
-        const targetRoute = isAliado
-          ? "/(panel-aliado)/dashboard"
-          : "/(clientes)";
-        setTimeout(() => {
-          router.replace(targetRoute);
-        }, 1500);
-      } catch (redirectError) {
-        setTimeout(() => {
-          router.replace("/(clientes)");
-        }, 1500);
+      // Refrescar usuario para asegurar contexto actualizado
+      if (typeof refresh === "function") {
+        await refresh();
       }
+      // Esperar un poco para asegurar que el contexto se actualice
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      // Ahora usar el user actualizado del hook
+      const aliadoTeamId = "6942bcc6001056b6c3d8";
+      if (user && user.email === email) {
+        try {
+          await teams.createMembership(aliadoTeamId, user.email, ["owner"]);
+        } catch (err) {
+          // Si ya es miembro, ignorar error
+          const errorMessage = err instanceof Error ? err.message : String(err);
+          if (errorMessage.includes("already a member")) {
+            // Ignore
+          } else {
+            console.warn("No se pudo agregar al team aliado:", err);
+          }
+        }
+      }
+      const isAliado = await checkIfUserIsAliado();
+      const targetRoute = isAliado
+        ? "/(panel-aliado)/dashboard"
+        : "/(clientes)";
+      setTimeout(() => {
+        router.replace(targetRoute);
+      }, 1500);
     } catch (error) {
       setSnackbarVisible(false);
       const message =
         error instanceof Error
           ? error.message
           : "No se pudo completar el registro.";
-      Alert.alert("Error al registrar", message);
+      setTimeout(() => {
+        Alert.alert("Error al registrar", message);
+      }, 400);
     }
-  }, [register, email, password, name, router]);
+  }, [register, email, password, name, router, user, refresh]);
 
   const handleLogout = useCallback(async () => {
     try {

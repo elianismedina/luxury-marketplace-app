@@ -197,8 +197,7 @@ const styles = StyleSheet.create({
   },
 });
 // Usa el ID de la colección desde la variable de entorno o fallback a "categoria"
-const CATEGORIAS_COLLECTION_ID =
-  process.env.EXPO_PUBLIC_APPWRITE_COLLECTION_CATEGORIA_ID ?? "categoria";
+const CATEGORIAS_COLLECTION_ID = "categoria";
 const PERFIL_ALIADO_COLLECTION_ID = "perfil_aliado";
 
 type Categoria = {
@@ -266,22 +265,69 @@ export default function CategoriasServiciosScreen() {
     try {
       const email = user?.email;
       if (!email) return;
+
+      // 1. Get Allied ID
+      const searchEmail = email.trim().toLowerCase();
+      console.log("Searching for aliado with email:", searchEmail);
+
       const aliadoQuery = await databases.listDocuments(
         databaseId,
         process.env.EXPO_PUBLIC_APPWRITE_COLLECTION_ALIADO_ID ?? "aliado",
-        [Query.equal("correoElectronico", email)]
+        [Query.equal("correoElectronico", searchEmail)]
       );
-      if (!aliadoQuery.documents.length) return;
+
+      console.log("Aliado results found:", aliadoQuery.total);
+
+      if (!aliadoQuery.documents.length) {
+        console.log("No aliado found for email:", searchEmail);
+        return;
+      }
       const aliadoId = aliadoQuery.documents[0].$id;
+      console.log("Aliado ID found:", aliadoId);
+
+      // 2. Get Profile - List all and find locally as a fallback if Query doesn't match relationships correctly
       const perfilQuery = await databases.listDocuments(
         databaseId,
         PERFIL_ALIADO_COLLECTION_ID,
-        [Query.equal("aliado", aliadoId)]
+        [Query.select(["*", "categoria.*"])]
       );
-      if (perfilQuery.documents.length) {
-        const perfilAliado = perfilQuery.documents[0];
-        setCategoriasSeleccionadas(perfilAliado.categoria || []);
+
+      console.log("Total profiles in collection:", perfilQuery.total);
+
+      const perfilAliado = perfilQuery.documents.find((p: any) =>
+        typeof p.aliado === "string"
+          ? p.aliado === aliadoId
+          : p.aliado?.$id === aliadoId
+      );
+
+      if (perfilAliado) {
+        console.log("Available keys in profile:", Object.keys(perfilAliado));
+        const rawCategorias = perfilAliado.categoria;
+
+        console.log(
+          "Raw category data:",
+          JSON.stringify(rawCategorias, null, 2)
+        );
+
+        if (!rawCategorias) {
+          setCategoriasSeleccionadas([]);
+          return;
+        }
+
+        // Appwrite relationship can return a single object, an array of objects, or an array of IDs
+        const normalizedIds = Array.isArray(rawCategorias)
+          ? rawCategorias.map((c: any) => (typeof c === "object" ? c.$id : c))
+          : [
+              typeof rawCategorias === "object"
+                ? rawCategorias.$id
+                : rawCategorias,
+            ];
+
+        const cleanIds = normalizedIds.filter(Boolean);
+        setCategoriasSeleccionadas(cleanIds);
+        console.log("Final normalized category IDs:", cleanIds);
       } else {
+        console.log("No profile matching Aliado ID:", aliadoId);
         setCategoriasSeleccionadas([]);
       }
     } catch (error) {
@@ -317,10 +363,11 @@ export default function CategoriasServiciosScreen() {
     try {
       const email = user?.email;
       if (!email) throw new Error("No se encontró el email del usuario");
+      const searchEmail = email.trim().toLowerCase();
       const aliadoQuery = await databases.listDocuments(
         databaseId,
         process.env.EXPO_PUBLIC_APPWRITE_COLLECTION_ALIADO_ID ?? "aliado",
-        [Query.equal("correoElectronico", email)]
+        [Query.equal("correoElectronico", searchEmail)]
       );
       if (!aliadoQuery.documents.length)
         throw new Error("No se encontró el aliado para este usuario");
