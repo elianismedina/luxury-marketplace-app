@@ -19,7 +19,9 @@ import { Button, HelperText, Searchbar, TextInput } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import Logo from "@/components/Logo";
+import { APPWRITE_CONFIG } from "@/constants/appwrite";
 import { COLOMBIAN_CITIES } from "@/constants/cities";
+
 import {
   account,
   databaseId,
@@ -235,8 +237,9 @@ export default function RegistroAliadoScreen() {
       console.log("Cuenta de usuario creada:", userResponse);
 
       // 3. Llamar función Appwrite para agregar al team 'aliados' con rol 'ALIADO'
-      const ALIADOS_TEAM_ID = "6942bcc6001056b6c3d8"; // ID del team 'aliados'
-      const ADD_TO_TEAM_FUNCTION_ID = "6942d4ff001e477fedc0"; // ID de la función Appwrite
+      const ALIADOS_TEAM_ID = APPWRITE_CONFIG.TEAM_ALIADOS_ID; // ID del team 'aliados'
+      const ADD_TO_TEAM_FUNCTION_ID = APPWRITE_CONFIG.FUNCTION_ADD_TO_TEAM_ID; // ID de la función Appwrite
+
       try {
         // Llamada HTTP a la función Appwrite (REST API)
         const functionEndpoint = `${process.env.EXPO_PUBLIC_APPWRITE_ENDPOINT}/functions/${ADD_TO_TEAM_FUNCTION_ID}/executions`;

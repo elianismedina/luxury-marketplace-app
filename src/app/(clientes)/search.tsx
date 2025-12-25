@@ -19,7 +19,7 @@ type Message = {
   imageUri?: string;
 };
 
-export default function TabTwoScreen() {
+export default function SearchScreen() {
   const theme = useTheme();
   const [searchQuery, setSearchQuery] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);

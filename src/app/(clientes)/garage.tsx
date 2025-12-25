@@ -93,7 +93,7 @@ const VehicleImage = ({
   );
 };
 
-export default function TabFourScreen() {
+export default function GarageScreen() {
   const { user } = useAuth();
   const router = useRouter();
   const [vehiculos, setVehiculos] = useState<Vehiculo[]>([]);

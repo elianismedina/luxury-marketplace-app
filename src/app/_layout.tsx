@@ -16,6 +16,7 @@ import { ThemeProvider as StyledThemeProvider } from "styled-components/native";
 
 import { AnimatedSplashScreen } from "@/components/AnimatedSplashScreen";
 import { useColorScheme } from "@/components/useColorScheme";
+import { APPWRITE_CONFIG } from "@/constants/appwrite";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import "@/i18n";
 import { teams } from "@/lib/appwrite";
@@ -113,7 +114,7 @@ function RootLayoutNav() {
         try {
           const teamsList = await teams.list();
           const isAliado = teamsList.teams.some(
-            (t: any) => t.$id === "6942bcc6001056b6c3d8"
+            (t: any) => t.$id === APPWRITE_CONFIG.TEAM_ALIADOS_ID
           );
 
           console.log("[RootLayoutNav] Role check:", {
@@ -123,7 +124,7 @@ function RootLayoutNav() {
 
           if (isAliado) {
             // Si es aliado y está en ruta pública o de cliente, redirigir a su panel
-            if (isPublicRoute || isClientePath) {
+            if ((isPublicRoute && !isAliadoPath) || isClientePath) {
               console.log(
                 "[RootLayoutNav] Allied user on wrong route, redirecting to allied dashboard..."
               );
@@ -131,7 +132,7 @@ function RootLayoutNav() {
             }
           } else {
             // Si no es aliado y está en ruta pública o de aliado, redirigir a clientes
-            if (isPublicRoute || isAliadoPath) {
+            if ((isPublicRoute && !isClientePath) || isAliadoPath) {
               console.log(
                 "[RootLayoutNav] Client user on wrong route, redirecting to client panel..."
               );

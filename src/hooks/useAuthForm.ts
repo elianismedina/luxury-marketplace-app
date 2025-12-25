@@ -1,3 +1,4 @@
+import { APPWRITE_CONFIG } from "@/constants/appwrite";
 import { useAuth } from "@/context/AuthContext";
 import { teams } from "@/lib/appwrite";
 import { getPasswordStrength, validateEmail } from "@/lib/authUtils";
@@ -10,10 +11,10 @@ type AuthTab = "login" | "register";
 
 const checkIfUserIsAliado = async (): Promise<boolean> => {
   try {
-    // ID del team de aliados
-    const teamId = "6942bcc6001056b6c3d8";
-    const memberships = await teams.listMemberships(teamId);
-    return memberships.total > 0;
+    const teamsList = await teams.list();
+    return teamsList.teams.some(
+      (t: any) => t.$id === APPWRITE_CONFIG.TEAM_ALIADOS_ID
+    );
   } catch (error) {
     console.error("Error verificando team aliado:", error);
     return false;
@@ -185,7 +186,8 @@ export const useAuthForm = () => {
       // Esperar un poco para asegurar que el contexto se actualice
       await new Promise((resolve) => setTimeout(resolve, 300));
       // Ahora usar el user actualizado del hook
-      const aliadoTeamId = "6942bcc6001056b6c3d8";
+      const aliadoTeamId = APPWRITE_CONFIG.TEAM_ALIADOS_ID;
+
       if (user && user.email === email) {
         try {
           await teams.createMembership(aliadoTeamId, user.email, ["owner"]);

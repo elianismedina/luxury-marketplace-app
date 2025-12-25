@@ -86,7 +86,7 @@ export default function TabLayout() {
           }}
         />
         <Tabs.Screen
-          name="two"
+          name="search"
           options={{
             title: "Buscar",
             tabBarIcon: ({ color }) => (
@@ -95,14 +95,14 @@ export default function TabLayout() {
           }}
         />
         <Tabs.Screen
-          name="three"
+          name="add-vehicle"
           options={{
             title: "Añadir",
             tabBarIcon: ({ color }) => <TabBarIcon name="plus" color={color} />,
           }}
         />
         <Tabs.Screen
-          name="four"
+          name="garage"
           options={{
             title: "Garaje",
             tabBarIcon: ({ color }) => (
@@ -154,7 +154,7 @@ export default function TabLayout() {
           }}
         />
         <Tabs.Screen
-          name="five"
+          name="more"
           listeners={{
             tabPress: (e) => {
               e.preventDefault();

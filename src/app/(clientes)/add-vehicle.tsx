@@ -51,7 +51,7 @@ type VehiculoFormData = {
   fechaVencimientoSOAT: string;
 };
 
-export default function TabThreeScreen() {
+export default function AddVehicleScreen() {
   const theme = useTheme();
   const router = useRouter();
   const { user } = useAuth();
@@ -234,7 +234,7 @@ export default function TabThreeScreen() {
 
       // Redirigir a Mi Garaje después de un breve delay
       setTimeout(() => {
-        router.push("/four");
+        router.push("/garage");
       }, 1500);
     } catch (error: any) {
       console.error("Error al registrar vehículo:", error);
@@ -617,7 +617,7 @@ export default function TabThreeScreen() {
               });
               setErrors({});
               setImageUri(null);
-              router.push("/four");
+              router.push("/garage");
             }}
             style={styles.cancelButton}
             contentStyle={styles.buttonContent}
