@@ -12,12 +12,14 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import Logo from "@/components/Logo";
 import { useAuth } from "@/context/AuthContext";
+import { useTranslation } from "react-i18next";
 
 const introImage = require("../../assets/images/IntroImage.webp");
 
 export default function WelcomeScreen() {
   const router = useRouter();
   const { user, initializing } = useAuth();
+  const { t } = useTranslation();
 
   // La redirección automática se maneja en _layout.tsx según el team/rol
 
@@ -38,9 +40,7 @@ export default function WelcomeScreen() {
         <View style={styles.overlay}>
           <View style={styles.content}>
             <Logo width="100%" height="100%" style={styles.logo} />
-            <Text style={styles.tagline}>
-              Tú y tu carro{"\n"}merecen el mundo.
-            </Text>
+            <Text style={styles.tagline}>{t("welcome.tagline")}</Text>
           </View>
           <View style={styles.actions}>
             <Button
@@ -50,7 +50,7 @@ export default function WelcomeScreen() {
               contentStyle={styles.buttonContent}
               labelStyle={styles.buttonLabel}
             >
-              Registrarme
+              {t("welcome.register_btn")}
             </Button>
             <Button
               mode="outlined"
@@ -60,7 +60,7 @@ export default function WelcomeScreen() {
               labelStyle={styles.buttonLabel}
               textColor="#ffffff"
             >
-              Iniciar sesión
+              {t("welcome.login_btn")}
             </Button>
           </View>
         </View>

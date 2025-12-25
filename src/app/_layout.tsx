@@ -17,10 +17,11 @@ import { ThemeProvider as StyledThemeProvider } from "styled-components/native";
 import { AnimatedSplashScreen } from "@/components/AnimatedSplashScreen";
 import { useColorScheme } from "@/components/useColorScheme";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
+import "@/i18n";
 import { teams } from "@/lib/appwrite";
 import { paperDarkTheme } from "@/theme/paperTheme";
 import { theme } from "@/theme/theme";
-import { usePathname, useRouter } from "expo-router";
+import { usePathname, useRouter, useSegments } from "expo-router";
 import { useState } from "react";
 
 export {
@@ -74,14 +75,28 @@ function RootLayoutNav() {
   const { user, initializing } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const segments = useSegments();
   const [checkedTeam, setCheckedTeam] = useState(false);
 
   useEffect(() => {
     if (initializing) return;
 
-    const isPublicRoute = ["/welcome", "/login", "/"].includes(pathname);
-    const isAliadoPath = pathname.includes("(panel-aliado)");
-    const isClientePath = pathname.includes("(clientes)");
+    // Use type assertion to avoid 'never' type issue with segments
+    const segmentsList = segments as string[];
+
+    const isRegistroAliado =
+      pathname.includes("(registro-aliado)") ||
+      segmentsList.includes("(registro-aliado)") ||
+      pathname.includes("/registro");
+
+    const isPublicRoute =
+      ["/welcome", "/login", "/"].includes(pathname) || isRegistroAliado;
+
+    const isAliadoPath =
+      pathname.includes("(panel-aliado)") ||
+      segmentsList.includes("(panel-aliado)");
+    const isClientePath =
+      pathname.includes("(clientes)") || segmentsList.includes("(clientes)");
 
     console.log("[RootLayoutNav] Status:", {
       pathname,
@@ -135,15 +150,16 @@ function RootLayoutNav() {
         }
       })();
     } else {
-      // Si no hay usuario y no es ruta pública, redirigir a welcome
-      if (!isPublicRoute && !pathname.includes("(registro-aliado)")) {
+      // Si no hay usuario y no es ruta pública (incluyendo registro de aliado), redirigir a welcome
+      if (!isPublicRoute) {
         console.log(
-          "[RootLayoutNav] No user on private route, redirecting to welcome..."
+          "[RootLayoutNav] No user on private route, redirecting to welcome...",
+          { pathname, isPublicRoute, isRegistroAliado }
         );
         router.replace("/welcome");
       }
     }
-  }, [user, initializing, pathname, router]);
+  }, [user, initializing, pathname, segments, router]);
 
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
@@ -154,6 +170,10 @@ function RootLayoutNav() {
           <Stack.Screen name="(clientes)" options={{ headerShown: false }} />
           <Stack.Screen
             name="(panel-aliado)"
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="(registro-aliado)"
             options={{ headerShown: false }}
           />
           <Stack.Screen name="modal" options={{ presentation: "modal" }} />

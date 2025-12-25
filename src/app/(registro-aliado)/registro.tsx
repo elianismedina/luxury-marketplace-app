@@ -1,19 +1,25 @@
 import { useRouter } from "expo-router";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Alert,
+  FlatList,
   KeyboardAvoidingView,
+  Modal,
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from "react-native";
 import { ID } from "react-native-appwrite";
-import { Button, HelperText, TextInput } from "react-native-paper";
+import { Button, HelperText, Searchbar, TextInput } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import Logo from "@/components/Logo";
+import { COLOMBIAN_CITIES } from "@/constants/cities";
 import {
   account,
   databaseId,
@@ -72,6 +78,7 @@ const generateTempPassword = (): string => {
 export default function RegistroAliadoScreen() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const { t } = useTranslation();
 
   const [formData, setFormData] = useState<AliadoFormData>({
     nombreAliado: "",
@@ -82,6 +89,12 @@ export default function RegistroAliadoScreen() {
   });
 
   const [errors, setErrors] = useState<Partial<AliadoFormData>>({});
+  const [cityModalVisible, setCityModalVisible] = useState(false);
+  const [citySearch, setCitySearch] = useState("");
+
+  const filteredCities = COLOMBIAN_CITIES.filter((city) =>
+    city.toLowerCase().includes(citySearch.toLowerCase())
+  );
 
   const checkEmailExists = async (email: string): Promise<boolean> => {
     try {
@@ -106,41 +119,49 @@ export default function RegistroAliadoScreen() {
 
     // Validar nombre del aliado
     if (!formData.nombreAliado.trim()) {
-      newErrors.nombreAliado = "El nombre del aliado es requerido";
+      newErrors.nombreAliado = t(
+        "aliado_registro.errors.workshop_name_required"
+      );
     } else if (formData.nombreAliado.length > 255) {
-      newErrors.nombreAliado = "El nombre no puede exceder 255 caracteres";
+      newErrors.nombreAliado = t(
+        "aliado_registro.errors.workshop_name_too_long"
+      );
     }
 
     // Validar nombre del encargado
     if (!formData.nombre_Encargado.trim()) {
-      newErrors.nombre_Encargado = "El nombre del encargado es requerido";
+      newErrors.nombre_Encargado = t(
+        "aliado_registro.errors.manager_name_required"
+      );
     } else if (formData.nombre_Encargado.length > 255) {
-      newErrors.nombre_Encargado = "El nombre no puede exceder 255 caracteres";
+      newErrors.nombre_Encargado = t(
+        "aliado_registro.errors.manager_name_too_long"
+      );
     }
 
     // Validar correo electrónico
     if (!formData.correoElectronico.trim()) {
-      newErrors.correoElectronico = "El correo electrónico es requerido";
+      newErrors.correoElectronico = t("aliado_registro.errors.email_required");
     } else if (!validateEmail(formData.correoElectronico)) {
-      newErrors.correoElectronico = "Ingrese un correo electrónico válido";
+      newErrors.correoElectronico = t("aliado_registro.errors.email_invalid");
     } else if (formData.correoElectronico.length > 320) {
-      newErrors.correoElectronico = "El correo no puede exceder 320 caracteres";
+      newErrors.correoElectronico = t("aliado_registro.errors.email_too_long");
     }
 
     // Validar teléfono
     if (!formData.telefonoContacto.trim()) {
-      newErrors.telefonoContacto = "El teléfono de contacto es requerido";
+      newErrors.telefonoContacto = t("aliado_registro.errors.phone_required");
     } else if (!validatePhone(formData.telefonoContacto)) {
-      newErrors.telefonoContacto = "Ingrese un número de teléfono válido";
+      newErrors.telefonoContacto = t("aliado_registro.errors.phone_invalid");
     } else if (formData.telefonoContacto.length > 20) {
-      newErrors.telefonoContacto = "El teléfono no puede exceder 20 caracteres";
+      newErrors.telefonoContacto = t("aliado_registro.errors.phone_too_long");
     }
 
     // Validar ciudad
     if (!formData.ciudad.trim()) {
-      newErrors.ciudad = "La ciudad es requerida";
+      newErrors.ciudad = t("aliado_registro.errors.city_required");
     } else if (formData.ciudad.length > 100) {
-      newErrors.ciudad = "La ciudad no puede exceder 100 caracteres";
+      newErrors.ciudad = t("aliado_registro.errors.city_too_long");
     }
 
     setErrors(newErrors);
@@ -149,14 +170,14 @@ export default function RegistroAliadoScreen() {
 
   const handleSubmit = async () => {
     if (!validateForm()) {
-      Alert.alert("Error", "Por favor corrige los errores en el formulario");
+      Alert.alert(t("common.error"), t("aliado_registro.errors.form_invalid"));
       return;
     }
 
     if (!isAppwriteConfigured) {
       Alert.alert(
-        "Error",
-        "La aplicación no está configurada correctamente. Contacte al administrador."
+        t("common.error"),
+        t("aliado_registro.errors.appwrite_not_configured")
       );
       return;
     }
@@ -169,15 +190,15 @@ export default function RegistroAliadoScreen() {
 
       if (emailExists) {
         Alert.alert(
-          "Email ya registrado",
-          "Ya existe una cuenta con este correo electrónico. Si ya está registrado, puede iniciar sesión directamente.",
+          t("aliado_registro.errors.email_exists_title"),
+          t("aliado_registro.errors.email_exists_msg"),
           [
             {
-              text: "Cancelar",
+              text: t("common.cancelar"),
               style: "cancel",
             },
             {
-              text: "Ir a Login",
+              text: t("common.ir_a_login"),
               onPress: () => router.replace("/login"),
             },
           ]
@@ -223,8 +244,9 @@ export default function RegistroAliadoScreen() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "X-Appwrite-Project": process.env.EXPO_PUBLIC_APPWRITE_PROJECT_ID,
-          },
+            "X-Appwrite-Project":
+              process.env.EXPO_PUBLIC_APPWRITE_PROJECT_ID || "",
+          } as HeadersInit,
           body: JSON.stringify({
             userId: userResponse.$id,
             teamId: ALIADOS_TEAM_ID,
@@ -241,8 +263,8 @@ export default function RegistroAliadoScreen() {
         console.error("Error al asignar team via función Appwrite:", err);
         // No bloquear el registro si falla el team, pero mostrar alerta
         Alert.alert(
-          "Advertencia",
-          "El usuario fue creado pero no se pudo asignar el rol de aliado automáticamente. Contacte al administrador si el problema persiste."
+          t("common.advertencia"),
+          t("aliado_registro.errors.team_assignment_fail")
         );
       }
 
@@ -255,19 +277,23 @@ export default function RegistroAliadoScreen() {
       } catch (err) {
         console.error("Error en login automático tras registro:", err);
         Alert.alert(
-          "Advertencia",
-          "El usuario fue creado pero no se pudo iniciar sesión automáticamente. Intente iniciar sesión manualmente."
+          t("common.advertencia"),
+          t("aliado_registro.errors.auto_login_fail")
         );
       }
 
       Alert.alert(
-        "¡Registro Completado!",
-        `Su cuenta ha sido creada exitosamente.\n\n📧 Email: ${formData.correoElectronico
-          .trim()
-          .toLowerCase()}\n🔐 Contraseña temporal: ${tempPassword}\n\n⚠️ IMPORTANTE: Guarde estas credenciales para acceder a su cuenta. Puede cambiar la contraseña después del primer login.`,
+        t("aliado_registro.success.title"),
+        `${t("aliado_registro.success.msg")}\n\n📧 ${t(
+          "aliado_registro.success.email_label"
+        )}: ${formData.correoElectronico.trim().toLowerCase()}\n🔐 ${t(
+          "aliado_registro.success.temp_password_label"
+        )}: ${tempPassword}\n\n⚠️ ${t(
+          "aliado_registro.success.important_warning"
+        )}`,
         [
           {
-            text: "Ir al Panel de Aliado",
+            text: t("aliado_registro.success.go_to_panel_btn"),
             onPress: () => router.replace("/(panel-aliado)/dashboard"),
           },
         ]
@@ -285,8 +311,7 @@ export default function RegistroAliadoScreen() {
     } catch (error) {
       console.error("Error al registrar aliado:", error);
 
-      let errorMessage =
-        "Ocurrió un error durante el registro. Intente nuevamente.";
+      let errorMessage = t("aliado_registro.errors.generic_error");
       let showLoginOption = false;
 
       if (error && typeof error === "object" && "message" in error) {
@@ -301,28 +326,30 @@ export default function RegistroAliadoScreen() {
           errorMsg.includes("unique") ||
           errorMsg.includes("duplicate")
         ) {
-          errorMessage =
-            "Ya existe una cuenta con este correo electrónico. Si ya está registrado, puede iniciar sesión directamente.";
+          errorMessage = t("aliado_registro.errors.email_exists_msg");
           showLoginOption = true;
         } else if (errorMsg.includes("Password")) {
-          errorMessage =
-            "Error al crear la cuenta. Verifique que el correo electrónico sea válido.";
+          errorMessage = t("aliado_registro.errors.generic_error"); // Could be more specific if keys were added
         }
       }
 
       if (showLoginOption) {
-        Alert.alert("Usuario Existente", errorMessage, [
-          {
-            text: "Cancelar",
-            style: "cancel",
-          },
-          {
-            text: "Ir a Login",
-            onPress: () => router.replace("/login"),
-          },
-        ]);
+        Alert.alert(
+          t("aliado_registro.errors.user_exists_title"),
+          errorMessage,
+          [
+            {
+              text: t("common.cancelar"),
+              style: "cancel",
+            },
+            {
+              text: t("common.ir_a_login"),
+              onPress: () => router.replace("/login"),
+            },
+          ]
+        );
       } else {
-        Alert.alert("Error", errorMessage);
+        Alert.alert(t("common.error"), errorMessage);
       }
     } finally {
       setLoading(false);
@@ -341,15 +368,13 @@ export default function RegistroAliadoScreen() {
         >
           <View style={styles.header}>
             <Logo width={120} height={120} />
-            <Text style={styles.title}>Registro de Aliado</Text>
-            <Text style={styles.subtitle}>
-              Únete a nuestra red de talleres especializados
-            </Text>
+            <Text style={styles.title}>{t("aliado_registro.title")}</Text>
+            <Text style={styles.subtitle}>{t("aliado_registro.subtitle")}</Text>
           </View>
 
           <View style={styles.form}>
             <TextInput
-              label="Nombre del Taller/Empresa *"
+              label={t("aliado_registro.form.workshop_name_label")}
               value={formData.nombreAliado}
               onChangeText={(text) => {
                 setFormData({ ...formData, nombreAliado: text });
@@ -362,14 +387,14 @@ export default function RegistroAliadoScreen() {
               style={styles.input}
               disabled={loading}
               maxLength={255}
-              placeholder="Ej: AutoServicio Premium"
+              placeholder={t("aliado_registro.form.workshop_name_placeholder")}
             />
             <HelperText type="error" visible={!!errors.nombreAliado}>
               {errors.nombreAliado}
             </HelperText>
 
             <TextInput
-              label="Nombre del Encargado *"
+              label={t("aliado_registro.form.manager_name_label")}
               value={formData.nombre_Encargado}
               onChangeText={(text) => {
                 setFormData({ ...formData, nombre_Encargado: text });
@@ -382,14 +407,14 @@ export default function RegistroAliadoScreen() {
               style={styles.input}
               disabled={loading}
               maxLength={255}
-              placeholder="Ej: Juan Carlos Pérez"
+              placeholder={t("aliado_registro.form.manager_name_placeholder")}
             />
             <HelperText type="error" visible={!!errors.nombre_Encargado}>
               {errors.nombre_Encargado}
             </HelperText>
 
             <TextInput
-              label="Correo Electrónico *"
+              label={t("aliado_registro.form.email_label")}
               value={formData.correoElectronico}
               onChangeText={(text) => {
                 setFormData({ ...formData, correoElectronico: text });
@@ -404,14 +429,14 @@ export default function RegistroAliadoScreen() {
               keyboardType="email-address"
               autoCapitalize="none"
               maxLength={320}
-              placeholder="Ej: contacto@autoservicio.com"
+              placeholder={t("aliado_registro.form.email_placeholder")}
             />
             <HelperText type="error" visible={!!errors.correoElectronico}>
               {errors.correoElectronico}
             </HelperText>
 
             <TextInput
-              label="Teléfono de Contacto *"
+              label={t("aliado_registro.form.phone_label")}
               value={formData.telefonoContacto}
               onChangeText={(text) => {
                 setFormData({ ...formData, telefonoContacto: text });
@@ -423,34 +448,89 @@ export default function RegistroAliadoScreen() {
               error={!!errors.telefonoContacto}
               style={styles.input}
               disabled={loading}
-              keyboardType="phone-pad"
+              keyboardType="number-pad"
               maxLength={20}
-              placeholder="Ej: +57 301 234 5678"
+              placeholder={t("aliado_registro.form.phone_placeholder")}
             />
             <HelperText type="error" visible={!!errors.telefonoContacto}>
               {errors.telefonoContacto}
             </HelperText>
 
-            <TextInput
-              label="Ciudad *"
-              value={formData.ciudad}
-              onChangeText={(text) => {
-                setFormData({ ...formData, ciudad: text });
-                if (errors.ciudad) {
-                  setErrors({ ...errors, ciudad: undefined });
-                }
-              }}
-              mode="outlined"
-              error={!!errors.ciudad}
-              style={styles.input}
+            <Pressable
+              onPress={() => setCityModalVisible(true)}
               disabled={loading}
-              maxLength={100}
-              placeholder="Ej: Bogotá"
-            />
+            >
+              <View pointerEvents="none">
+                <TextInput
+                  label={t("aliado_registro.form.city_label")}
+                  value={formData.ciudad}
+                  mode="outlined"
+                  error={!!errors.ciudad}
+                  style={styles.input}
+                  editable={false}
+                  placeholder={t("aliado_registro.form.city_placeholder")}
+                  right={<TextInput.Icon icon="chevron-down" />}
+                />
+              </View>
+            </Pressable>
             <HelperText type="error" visible={!!errors.ciudad}>
               {errors.ciudad}
             </HelperText>
           </View>
+
+          <Modal
+            visible={cityModalVisible}
+            animationType="slide"
+            transparent={true}
+            onRequestClose={() => setCityModalVisible(false)}
+          >
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalContent}>
+                <View style={styles.modalHeader}>
+                  <Text style={styles.modalTitle}>
+                    {t("common.seleccionar_ciudad")}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => setCityModalVisible(false)}
+                    style={styles.closeButton}
+                  >
+                    <Text style={styles.closeButtonText}>✕</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <Searchbar
+                  placeholder={t("common.seleccionar_ciudad")}
+                  onChangeText={setCitySearch}
+                  value={citySearch}
+                  style={styles.searchBar}
+                  inputStyle={styles.searchBarInput}
+                  iconColor="#9CA3AF"
+                  placeholderTextColor="#6B7280"
+                />
+
+                <FlatList
+                  data={filteredCities}
+                  keyExtractor={(item) => item}
+                  renderItem={({ item }) => (
+                    <TouchableOpacity
+                      style={styles.cityItem}
+                      onPress={() => {
+                        setFormData({ ...formData, ciudad: item });
+                        if (errors.ciudad) {
+                          setErrors({ ...errors, ciudad: undefined });
+                        }
+                        setCityModalVisible(false);
+                        setCitySearch("");
+                      }}
+                    >
+                      <Text style={styles.cityText}>{item}</Text>
+                    </TouchableOpacity>
+                  )}
+                  style={styles.cityList}
+                />
+              </View>
+            </View>
+          </Modal>
 
           <View style={styles.buttonContainer}>
             <Button
@@ -461,7 +541,9 @@ export default function RegistroAliadoScreen() {
               style={styles.submitButton}
               contentStyle={styles.buttonContent}
             >
-              {loading ? "Registrando..." : "Registrar Aliado"}
+              {loading
+                ? t("aliado_registro.form.submitting_btn")
+                : t("aliado_registro.form.submit_btn")}
             </Button>
 
             <Button
@@ -471,15 +553,12 @@ export default function RegistroAliadoScreen() {
               style={styles.cancelButton}
               contentStyle={styles.buttonContent}
             >
-              Cancelar
+              {t("common.cancelar")}
             </Button>
           </View>
 
           <View style={styles.footer}>
-            <Text style={styles.footerText}>
-              Al registrarte aceptas formar parte de nuestra red de aliados
-              especializados
-            </Text>
+            <Text style={styles.footerText}>{t("aliado_registro.footer")}</Text>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -548,5 +627,57 @@ const styles = StyleSheet.create({
     color: "#666666",
     textAlign: "center",
     lineHeight: 18,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    justifyContent: "flex-end",
+  },
+  modalContent: {
+    backgroundColor: "#1E1E1E",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    height: "80%",
+    padding: 20,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#FFFFFF",
+  },
+  closeButton: {
+    padding: 5,
+  },
+  closeButtonText: {
+    color: "#9CA3AF",
+    fontSize: 24,
+  },
+  searchBar: {
+    backgroundColor: "#2D2D2D",
+    marginBottom: 15,
+    borderRadius: 10,
+    elevation: 0,
+  },
+  searchBarInput: {
+    color: "#FFFFFF",
+    fontSize: 16,
+  },
+  cityList: {
+    flex: 1,
+  },
+  cityItem: {
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: "#2D2D2D",
+  },
+  cityText: {
+    fontSize: 16,
+    color: "#FFFFFF",
   },
 });

@@ -1,0 +1,129 @@
+{
+  "common": {
+    "cambiar_idioma": "Cambiar Idioma",
+    "seleccionar_ciudad": "Seleccionar Ciudad",
+    "otra_ciudad": "Otra ciudad",
+    "favoritos": "Favoritos",
+    "configuracion": "Configuración",
+    "cerrar_sesion": "Cerrar Sesión",
+    "ok": "OK",
+    "cancelar": "Cancelar",
+    "error": "Error",
+    "advertencia": "Advertencia",
+    "ir_a_login": "Ir a Login"
+  },
+  "welcome": {
+    "bienvenida": "¡Bienvenido a Zona Pits!",
+    "tagline": "Tú y tu carro\nmerecen el mundo.",
+    "login_btn": "Iniciar Sesión",
+    "register_btn": "Registrarse"
+  },
+  "auth": {
+    "login_tab": "Iniciar Sesión",
+    "register_tab": "Registrarse",
+    "auth_status_logged_in": "Sesión iniciada como",
+    "appwrite_not_configured": "Appwrite no está configurado. Define las variables de entorno `EXPO_PUBLIC_APPWRITE_*` para activar el login.",
+    "email_label": "Correo electrónico",
+    "email_placeholder": "tu@correo.com",
+    "invalid_email_error": "Por favor ingresa un correo electrónico válido",
+    "valid_email_success": "✓ Correo electrónico válido",
+    "password_label": "Contraseña",
+    "password_placeholder": "Mínimo 8 caracteres",
+    "password_strength": "Fortaleza",
+    "password_hint": "Usa mayúsculas, minúsculas, números y símbolos",
+    "password_secure": "Contraseña segura",
+    "password_levels": {
+      "very_weak": "Muy débil",
+      "weak": "Débil",
+      "acceptable": "Aceptable",
+      "strong": "Fuerte",
+      "very_strong": "Muy fuerte"
+    },
+    "name_label": "Nombre",
+    "name_placeholder": "Tu nombre",
+    "remember_me": "Recordarme",
+    "forgot_password": "¿Olvidaste tu contraseña?",
+    "or_continue_with": "O continúa con",
+    "continue_with_google": "Continuar con Google",
+    "aliado_question": "¿Eres un taller, vendes repuestos y accesorios o prestas servicios?",
+    "aliado_register_link": "Registrate como Aliado Zona Pits",
+    "messages": {
+      "login_success": "✓ Sesión iniciada correctamente",
+      "register_success": "✓ Cuenta creada correctamente",
+      "google_login_success": "✓ Sesión iniciada con Google",
+      "logout_title": "Sesión cerrada",
+      "logout_message": "Has cerrado sesión correctamente."
+    },
+    "errors": {
+      "email_required_title": "Correo electrónico requerido",
+      "email_required_message": "Por favor ingresa tu correo electrónico para recuperar tu contraseña.",
+      "invalid_email_title": "Correo electrónico inválido",
+      "invalid_email_message": "Por favor ingresa un correo electrónico válido.",
+      "login_error_title": "Error al iniciar sesión",
+      "register_error_title": "Error al registrar",
+      "logout_error_title": "Error al cerrar sesión",
+      "error_title": "Error",
+      "rate_limit_error": "Has intentado iniciar sesión demasiadas veces. Espera unos segundos e inténtalo de nuevo.",
+      "recovery_email_fail": "No se pudo enviar el email de recuperación.",
+      "login_fail": "No se pudo iniciar sesión.",
+      "register_fail": "No se pudo completar el registro.",
+      "logout_fail": "No se pudo cerrar la sesión.",
+      "google_login_fail": "No se pudo iniciar sesión con Google."
+    },
+    "recovery": {
+      "email_sent_title": "Correo enviado",
+      "email_sent_message": "Hemos enviado un enlace de recuperación a {{email}}.\n\n1. Revisa tu correo\n2. Abre el enlace en el email\n3. Copia el userId y secret de la URL\n4. Usa el botón \"Ya tengo el código\" abajo",
+      "already_have_code": "Ya tengo el código"
+    }
+  },
+  "aliado_registro": {
+    "title": "Registro de Aliado",
+    "subtitle": "Únete a nuestra red de talleres especializados",
+    "form": {
+      "workshop_name_label": "Nombre del Taller/Empresa *",
+      "workshop_name_placeholder": "Ej: AutoServicio Premium",
+      "manager_name_label": "Nombre del Encargado *",
+      "manager_name_placeholder": "Ej: Juan Carlos Pérez",
+      "email_label": "Correo Electrónico *",
+      "email_placeholder": "Ej: contacto@autoservicio.com",
+      "phone_label": "Teléfono de Contacto *",
+      "phone_placeholder": "Ej: +57 301 234 5678",
+      "city_label": "Ciudad *",
+      "city_placeholder": "Ej: Bogotá",
+      "submit_btn": "Registrar Aliado",
+      "submitting_btn": "Registrando...",
+      "cancel_btn": "Cancelar"
+    },
+    "errors": {
+      "workshop_name_required": "El nombre del aliado es requerido",
+      "workshop_name_too_long": "El nombre no puede exceder 255 caracteres",
+      "manager_name_required": "El nombre del encargado es requerido",
+      "manager_name_too_long": "El nombre no puede exceder 255 caracteres",
+      "email_required": "El correo electrónico es requerido",
+      "email_invalid": "Ingrese un correo electrónico válido",
+      "email_too_long": "El correo no puede exceder 320 caracteres",
+      "phone_required": "El teléfono de contacto es requerido",
+      "phone_invalid": "Ingrese un número de teléfono válido",
+      "phone_too_long": "El teléfono no puede exceder 20 caracteres",
+      "city_required": "La ciudad es requerida",
+      "city_too_long": "La ciudad no puede exceder 100 caracteres",
+      "form_invalid": "Por favor corrige los errores en el formulario",
+      "appwrite_not_configured": "La aplicación no está configurada correctamente. Contacte al administrador.",
+      "email_exists_title": "Email ya registrado",
+      "email_exists_msg": "Ya existe una cuenta con este correo electrónico. Si ya está registrado, puede iniciar sesión directamente.",
+      "generic_error": "Ocurrió un error durante el registro. Intente nuevamente.",
+      "user_exists_title": "Usuario Existente",
+      "team_assignment_fail": "El usuario fue creado pero no se pudo asignar el rol de aliado automáticamente. Contacte al administrador si el problema persiste.",
+      "auto_login_fail": "El usuario fue creado pero no se pudo iniciar sesión automáticamente. Intente iniciar sesión manualmente."
+    },
+    "success": {
+      "title": "¡Registro Completado!",
+      "msg": "Su cuenta ha sido creada exitosamente.",
+      "email_label": "Email",
+      "temp_password_label": "Contraseña temporal",
+      "important_warning": "IMPORTANTE: Guarde estas credenciales para acceder a su cuenta. Puede cambiar la contraseña después del primer login.",
+      "go_to_panel_btn": "Ir al Panel de Aliado"
+    },
+    "footer": "Al registrarte aceptas formar parte de nuestra red de aliados especializados"
+  }
+}

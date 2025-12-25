@@ -1,0 +1,129 @@
+{
+  "common": {
+    "cambiar_idioma": "Change Language",
+    "seleccionar_ciudad": "Select City",
+    "otra_ciudad": "Other city",
+    "favoritos": "Favorites",
+    "configuracion": "Settings",
+    "cerrar_sesion": "Logout",
+    "ok": "OK",
+    "cancelar": "Cancel",
+    "error": "Error",
+    "advertencia": "Warning",
+    "ir_a_login": "Go to Login"
+  },
+  "welcome": {
+    "bienvenida": "Welcome to Zona Pits app!",
+    "tagline": "You and your car\ndeserve the world.",
+    "login_btn": "Login",
+    "register_btn": "Register"
+  },
+  "auth": {
+    "login_tab": "Login",
+    "register_tab": "Register",
+    "auth_status_logged_in": "Logged in as",
+    "appwrite_not_configured": "Appwrite is not configured. Define `EXPO_PUBLIC_APPWRITE_*` environment variables to enable login.",
+    "email_label": "Email",
+    "email_placeholder": "you@email.com",
+    "invalid_email_error": "Please enter a valid email address",
+    "valid_email_success": "✓ Valid email address",
+    "password_label": "Password",
+    "password_placeholder": "Minimum 8 characters",
+    "password_strength": "Strength",
+    "password_hint": "Use uppercase, lowercase, numbers, and symbols",
+    "password_secure": "Secure password",
+    "password_levels": {
+      "very_weak": "Very weak",
+      "weak": "Weak",
+      "acceptable": "Acceptable",
+      "strong": "Strong",
+      "very_strong": "Very strong"
+    },
+    "name_label": "Name",
+    "name_placeholder": "Your name",
+    "remember_me": "Remember me",
+    "forgot_password": "Forgot your password?",
+    "or_continue_with": "Or continue with",
+    "continue_with_google": "Continue with Google",
+    "aliado_question": "Are you a workshop, selling parts and accessories, or providing services?",
+    "aliado_register_link": "Register as a Zona Pits Partner",
+    "messages": {
+      "login_success": "✓ Logged in successfully",
+      "register_success": "✓ Account created successfully",
+      "google_login_success": "✓ Logged in with Google",
+      "logout_title": "Logged out",
+      "logout_message": "You have logged out successfully."
+    },
+    "errors": {
+      "email_required_title": "Email required",
+      "email_required_message": "Please enter your email to recover your password.",
+      "invalid_email_title": "Invalid email",
+      "invalid_email_message": "Please enter a valid email address.",
+      "login_error_title": "Login Error",
+      "register_error_title": "Registration Error",
+      "logout_error_title": "Logout Error",
+      "error_title": "Error",
+      "rate_limit_error": "Too many login attempts. Please wait a few seconds and try again.",
+      "recovery_email_fail": "Could not send recovery email.",
+      "login_fail": "Could not log in.",
+      "register_fail": "Could not complete registration.",
+      "logout_fail": "Could not log out.",
+      "google_login_fail": "Could not log in with Google."
+    },
+    "recovery": {
+      "email_sent_title": "Email sent",
+      "email_sent_message": "We have sent a recovery link to {{email}}.\n\n1. Check your email\n2. Open the link in the email\n3. Copy the userId and secret from the URL\n4. Use the \"I already have the code\" button below",
+      "already_have_code": "I already have the code"
+    }
+  },
+  "aliado_registro": {
+    "title": "Partner Registration",
+    "subtitle": "Join our network of specialized workshops",
+    "form": {
+      "workshop_name_label": "Workshop/Company Name *",
+      "workshop_name_placeholder": "Ex: Premium AutoService",
+      "manager_name_label": "Manager's Name *",
+      "manager_name_placeholder": "Ex: John Doe",
+      "email_label": "Email Address *",
+      "email_placeholder": "Ex: contact@autoservice.com",
+      "phone_label": "Contact Phone *",
+      "phone_placeholder": "Ex: +1 234 567 8900",
+      "city_label": "City *",
+      "city_placeholder": "Ex: New York",
+      "submit_btn": "Register Partner",
+      "submitting_btn": "Registering...",
+      "cancel_btn": "Cancel"
+    },
+    "errors": {
+      "workshop_name_required": "Workshop name is required",
+      "workshop_name_too_long": "Name cannot exceed 255 characters",
+      "manager_name_required": "Manager name is required",
+      "manager_name_too_long": "Name cannot exceed 255 characters",
+      "email_required": "Email address is required",
+      "email_invalid": "Enter a valid email address",
+      "email_too_long": "Email cannot exceed 320 characters",
+      "phone_required": "Contact phone is required",
+      "phone_invalid": "Enter a valid phone number",
+      "phone_too_long": "Phone cannot exceed 20 characters",
+      "city_required": "City is required",
+      "city_too_long": "City cannot exceed 100 characters",
+      "form_invalid": "Please correct the errors in the form",
+      "appwrite_not_configured": "The application is not configured correctly. Contact the administrator.",
+      "email_exists_title": "Email already registered",
+      "email_exists_msg": "A account already exists with this email. If you are already registered, you can log in directly.",
+      "generic_error": "An error occurred during registration. Please try again.",
+      "user_exists_title": "Existing User",
+      "team_assignment_fail": "The user was created but the partner role could not be assigned automatically. Contact the administrator if the problem persists.",
+      "auto_login_fail": "The user was created but could not be logged in automatically. Please try logging in manually."
+    },
+    "success": {
+      "title": "Registration Completed!",
+      "msg": "Your account has been successfully created.",
+      "email_label": "Email",
+      "temp_password_label": "Temporary password",
+      "important_warning": "IMPORTANT: Save these credentials to access your account. You can change your password after the first login.",
+      "go_to_panel_btn": "Go to Partner Panel"
+    },
+    "footer": "By registering you agree to be part of our network of specialized partners"
+  }
+}

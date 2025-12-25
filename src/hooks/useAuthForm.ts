@@ -3,6 +3,7 @@ import { teams } from "@/lib/appwrite";
 import { getPasswordStrength, validateEmail } from "@/lib/authUtils";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Alert } from "react-native";
 
 type AuthTab = "login" | "register";
@@ -34,6 +35,7 @@ export const useAuthForm = () => {
     loginWithGoogle,
     refresh,
   } = useAuth();
+  const { t } = useTranslation();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -108,15 +110,15 @@ export const useAuthForm = () => {
   const handleForgotPassword = useCallback(async () => {
     if (!email.trim()) {
       Alert.alert(
-        "Correo electrónico requerido",
-        "Por favor ingresa tu correo electrónico para recuperar tu contraseña."
+        t("auth.errors.email_required_title"),
+        t("auth.errors.email_required_message")
       );
       return;
     }
     if (!isEmailValid) {
       Alert.alert(
-        "Correo electrónico inválido",
-        "Por favor ingresa un correo electrónico válido."
+        t("auth.errors.invalid_email_title"),
+        t("auth.errors.invalid_email_message")
       );
       return;
     }
@@ -125,12 +127,12 @@ export const useAuthForm = () => {
       const redirectUrl = "https://cloud.appwrite.io/v1/account/recovery";
       await recoverPassword(email, redirectUrl);
       Alert.alert(
-        "Correo enviado",
-        `Hemos enviado un enlace de recuperación a ${email}.\n\n1. Revisa tu correo\n2. Abre el enlace en el email\n3. Copia el userId y secret de la URL\n4. Usa el botón "Ya tengo el código" abajo`,
+        t("auth.recovery.email_sent_title"),
+        t("auth.recovery.email_sent_message", { email }),
         [
-          { text: "OK" },
+          { text: t("common.ok") },
           {
-            text: "Ya tengo el código",
+            text: t("auth.recovery.already_have_code"),
             onPress: () => router.push("/reset-password"),
           },
         ]
@@ -139,8 +141,8 @@ export const useAuthForm = () => {
       const message =
         error instanceof Error
           ? error.message
-          : "No se pudo enviar el email de recuperación.";
-      Alert.alert("Error", message);
+          : t("auth.errors.recovery_email_fail");
+      Alert.alert(t("auth.errors.error_title"), message);
     }
   }, [email, isEmailValid, recoverPassword, router]);
 
@@ -153,7 +155,7 @@ export const useAuthForm = () => {
       // Ignorar errores
     }
     try {
-      setSnackbarMessage("✓ Sesión iniciada correctamente");
+      setSnackbarMessage(t("auth.messages.login_success"));
       setSnackbarVisible(true);
       await login(email, password);
       setPendingLogin(true);
@@ -163,18 +165,17 @@ export const useAuthForm = () => {
     } catch (error) {
       setSnackbarVisible(false);
       let message =
-        error instanceof Error ? error.message : "No se pudo iniciar sesión.";
+        error instanceof Error ? error.message : t("auth.errors.login_fail");
       if (typeof message === "string" && message.includes("Rate limit")) {
-        message =
-          "Has intentado iniciar sesión demasiadas veces. Espera unos segundos e inténtalo de nuevo.";
+        message = t("auth.errors.rate_limit_error");
       }
-      Alert.alert("Error al iniciar sesión", message);
+      Alert.alert(t("auth.errors.login_error_title"), message);
     }
   }, [login, logout, user, email, password, rememberMe]);
 
   const handleRegister = useCallback(async () => {
     try {
-      setSnackbarMessage("✓ Cuenta creada correctamente");
+      setSnackbarMessage(t("auth.messages.register_success"));
       setSnackbarVisible(true);
       await register(email, password, name);
       // Refrescar usuario para asegurar contexto actualizado
@@ -208,11 +209,9 @@ export const useAuthForm = () => {
     } catch (error) {
       setSnackbarVisible(false);
       const message =
-        error instanceof Error
-          ? error.message
-          : "No se pudo completar el registro.";
+        error instanceof Error ? error.message : t("auth.errors.register_fail");
       setTimeout(() => {
-        Alert.alert("Error al registrar", message);
+        Alert.alert(t("auth.errors.register_error_title"), message);
       }, 400);
     }
   }, [register, email, password, name, router, user, refresh]);
@@ -220,26 +219,29 @@ export const useAuthForm = () => {
   const handleLogout = useCallback(async () => {
     try {
       await logout();
-      Alert.alert("Sesión cerrada", "Has cerrado sesión correctamente.");
+      Alert.alert(
+        t("auth.messages.logout_title"),
+        t("auth.messages.logout_message")
+      );
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : "No se pudo cerrar la sesión.";
-      Alert.alert("Error al cerrar sesión", message);
+        error instanceof Error ? error.message : t("auth.errors.logout_fail");
+      Alert.alert(t("auth.errors.logout_error_title"), message);
     }
   }, [logout]);
 
   const handleGoogleLogin = useCallback(async () => {
     try {
       await loginWithGoogle();
-      setSnackbarMessage("✓ Sesión iniciada con Google");
+      setSnackbarMessage(t("auth.messages.google_login_success"));
       setSnackbarVisible(true);
     } catch (error) {
       setSnackbarVisible(false);
       const message =
         error instanceof Error
           ? error.message
-          : "No se pudo iniciar sesión con Google.";
-      Alert.alert("Error", message);
+          : t("auth.errors.google_login_fail");
+      Alert.alert(t("auth.errors.error_title"), message);
     }
   }, [loginWithGoogle]);
 

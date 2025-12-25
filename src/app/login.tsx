@@ -21,6 +21,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import Logo from "@/components/Logo";
 import { useAuthForm } from "@/hooks/useAuthForm";
+import { useTranslation } from "react-i18next";
 
 export default function AuthScreen() {
   const router = useRouter();
@@ -58,6 +59,12 @@ export default function AuthScreen() {
     handleLogout,
     handleGoogleLogin,
   } = useAuthForm();
+  const { t } = useTranslation();
+
+  const getStrengthLabel = (score: number) => {
+    const keys = ["very_weak", "weak", "acceptable", "strong", "very_strong"];
+    return t(`auth.password_levels.${keys[score] || keys[0]}`);
+  };
 
   if (initializing && !user) {
     return (
@@ -83,7 +90,9 @@ export default function AuthScreen() {
             <View style={styles.statusHeader}>
               {user ? (
                 <Text style={styles.statusText}>
-                  {`Sesión iniciada como ${user.name || user.email}`}
+                  {`${t("auth.auth_status_logged_in")} ${
+                    user.name || user.email
+                  }`}
                 </Text>
               ) : null}
               {loading ? <ActivityIndicator size="small" /> : null}
@@ -91,8 +100,7 @@ export default function AuthScreen() {
 
             {!isConfigured ? (
               <HelperText type="info" visible style={styles.warning}>
-                Appwrite no está configurado. Define las variables de entorno
-                `EXPO_PUBLIC_APPWRITE_*` para activar el login.
+                {t("auth.appwrite_not_configured")}
               </HelperText>
             ) : null}
 
@@ -105,12 +113,12 @@ export default function AuthScreen() {
               buttons={[
                 {
                   value: "login",
-                  label: "Iniciar sesión",
+                  label: t("auth.login_tab"),
                   icon: "login",
                 },
                 {
                   value: "register",
-                  label: "Registrarse",
+                  label: t("auth.register_tab"),
                   icon: "account-plus",
                 },
               ]}
@@ -119,8 +127,8 @@ export default function AuthScreen() {
             <View style={styles.form}>
               <View>
                 <TextInput
-                  label="Correo electrónico"
-                  placeholder="tu@correo.com"
+                  label={t("auth.email_label")}
+                  placeholder={t("auth.email_placeholder")}
                   value={email}
                   onChangeText={setEmail}
                   onBlur={() => setEmailTouched(true)}
@@ -138,20 +146,20 @@ export default function AuthScreen() {
                 />
                 {emailTouched && email.length > 0 && !isEmailValid && (
                   <HelperText type="error" visible>
-                    Por favor ingresa un correo electrónico válido
+                    {t("auth.invalid_email_error")}
                   </HelperText>
                 )}
                 {emailTouched && isEmailValid && (
                   <HelperText type="info" visible style={styles.successText}>
-                    ✓ Correo electrónico válido
+                    {t("auth.valid_email_success")}
                   </HelperText>
                 )}
               </View>
 
               <View>
                 <TextInput
-                  label="Contraseña"
-                  placeholder="Mínimo 8 caracteres"
+                  label={t("auth.password_label")}
+                  placeholder={t("auth.password_placeholder")}
                   value={password}
                   onChangeText={setPassword}
                   onBlur={() => setPasswordTouched(true)}
@@ -178,7 +186,8 @@ export default function AuthScreen() {
                     <View style={styles.passwordStrength}>
                       <View style={styles.strengthHeader}>
                         <Text style={styles.strengthLabel}>
-                          Fortaleza: {passwordStrength.label}
+                          {t("auth.password_strength")}:{" "}
+                          {getStrengthLabel(passwordStrength.score)}
                         </Text>
                       </View>
                       <ProgressBar
@@ -188,8 +197,8 @@ export default function AuthScreen() {
                       />
                       <HelperText type="info" visible>
                         {passwordStrength.score < 2
-                          ? "Usa mayúsculas, minúsculas, números y símbolos"
-                          : "Contraseña segura"}
+                          ? t("auth.password_hint")
+                          : t("auth.password_secure")}
                       </HelperText>
                     </View>
                   )}
@@ -197,8 +206,8 @@ export default function AuthScreen() {
 
               {activeTab === "register" ? (
                 <TextInput
-                  label="Nombre"
-                  placeholder="Tu nombre"
+                  label={t("auth.name_label")}
+                  placeholder={t("auth.name_placeholder")}
                   value={name}
                   onChangeText={setName}
                   autoCapitalize="words"
@@ -223,7 +232,7 @@ export default function AuthScreen() {
                       style={styles.checkboxLabel}
                       onPress={() => setRememberMe(!rememberMe)}
                     >
-                      Recordarme
+                      {t("auth.remember_me")}
                     </Text>
                   </View>
                   <Button
@@ -233,7 +242,7 @@ export default function AuthScreen() {
                     style={styles.forgotButton}
                     textColor="#0055D4"
                   >
-                    ¿Olvidaste tu contraseña?
+                    {t("auth.forgot_password")}
                   </Button>
                 </View>
               )}
@@ -247,7 +256,7 @@ export default function AuthScreen() {
                   style={styles.button}
                   testID="login-button"
                 >
-                  Iniciar sesión
+                  {t("auth.login_tab")}
                 </Button>
               ) : (
                 <Button
@@ -258,13 +267,15 @@ export default function AuthScreen() {
                   style={styles.button}
                   buttonColor="#0055D4"
                 >
-                  Registrarse
+                  {t("auth.register_tab")}
                 </Button>
               )}
 
               <View style={styles.divider}>
                 <View style={styles.dividerLine} />
-                <Text style={styles.dividerText}>O continúa con</Text>
+                <Text style={styles.dividerText}>
+                  {t("auth.or_continue_with")}
+                </Text>
                 <View style={styles.dividerLine} />
               </View>
 
@@ -278,14 +289,13 @@ export default function AuthScreen() {
                 textColor="#FFFFFF"
                 buttonColor="transparent"
               >
-                Continuar con Google
+                {t("auth.continue_with_google")}
               </Button>
 
               {activeTab === "register" && (
                 <View style={styles.aliadoContainer}>
                   <Text style={styles.aliadoText}>
-                    ¿Eres un taller, vendes repuestos y accesorios o prestas
-                    servicios?
+                    {t("auth.aliado_question")}
                   </Text>
                   <Button
                     mode="text"
@@ -299,7 +309,7 @@ export default function AuthScreen() {
                       textDecorationLine: "underline",
                     }}
                   >
-                    Registrate como Aliado Zona Pits
+                    {t("auth.aliado_register_link")}
                   </Button>
                 </View>
               )}
@@ -312,7 +322,7 @@ export default function AuthScreen() {
                   loading={loading}
                   style={styles.button}
                 >
-                  Cerrar sesión
+                  {t("common.cerrar_sesion")}
                 </Button>
               ) : null}
             </View>
