@@ -1,12 +1,32 @@
-import React from 'react';
-import { render, fireEvent } from '@testing-library/react-native';
-import AuthScreen from '../login';
+import mockEs from "@/i18n/es.json";
+import { fireEvent, render } from "@testing-library/react-native";
+import React from "react";
 
-jest.mock('@/components/Logo', () => jest.fn());
-jest.mock('@/lib/appwrite', () => jest.fn());
-jest.mock('@expo/vector-icons');
+jest.mock("@/components/Logo", () => "Logo");
+jest.mock("@/lib/appwrite", () => ({
+  teams: {
+    listMemberships: jest.fn().mockResolvedValue({ total: 0 }),
+    createMembership: jest.fn().mockResolvedValue({}),
+  },
+}));
 
-jest.mock('expo-router', () => ({
+jest.mock("@expo/vector-icons");
+
+jest.mock("react-i18next", () => ({
+  useTranslation: () => ({
+    t: (key: string) => {
+      const parts = key.split(".");
+      let res: any = mockEs;
+      for (const part of parts) {
+        res = res[part];
+        if (!res) return key;
+      }
+      return typeof res === "string" ? res : key;
+    },
+  }),
+}));
+
+jest.mock("expo-router", () => ({
   useLocalSearchParams: () => ({}),
   useRouter: () => ({
     push: jest.fn(),
@@ -14,7 +34,7 @@ jest.mock('expo-router', () => ({
   }),
 }));
 
-jest.mock('@/context/AuthContext', () => ({
+jest.mock("@/context/AuthContext", () => ({
   useAuth: () => ({
     user: null,
     initializing: false,
@@ -28,7 +48,8 @@ jest.mock('@/context/AuthContext', () => ({
   }),
 }));
 
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import AuthScreen from "../login";
 
 const renderWithProviders = (ui: React.ReactElement) => {
   return render(
@@ -43,25 +64,27 @@ const renderWithProviders = (ui: React.ReactElement) => {
   );
 };
 
-describe('AuthScreen', () => {
-  it('renders correctly', () => {
-    const { getByTestId, getByPlaceholderText } = renderWithProviders(<AuthScreen />);
+describe("AuthScreen", () => {
+  it("renders correctly", () => {
+    const { getByTestId, getByPlaceholderText } = renderWithProviders(
+      <AuthScreen />
+    );
 
-    expect(getByTestId('login-button')).toBeTruthy();
-    expect(getByPlaceholderText('tu@correo.com')).toBeTruthy();
-    expect(getByPlaceholderText('Mínimo 8 caracteres')).toBeTruthy();
+    expect(getByTestId("login-button")).toBeTruthy();
+    expect(getByPlaceholderText("tu@correo.com")).toBeTruthy();
+    expect(getByPlaceholderText("Mínimo 8 caracteres")).toBeTruthy();
   });
 
-  it('allows entering email and password', () => {
+  it("allows entering email and password", () => {
     const { getByPlaceholderText } = renderWithProviders(<AuthScreen />);
 
-    const emailInput = getByPlaceholderText('tu@correo.com');
-    const passwordInput = getByPlaceholderText('Mínimo 8 caracteres');
+    const emailInput = getByPlaceholderText("tu@correo.com");
+    const passwordInput = getByPlaceholderText("Mínimo 8 caracteres");
 
-    fireEvent.changeText(emailInput, 'test@example.com');
-    fireEvent.changeText(passwordInput, 'password123');
+    fireEvent.changeText(emailInput, "test@example.com");
+    fireEvent.changeText(passwordInput, "password123");
 
-    expect(emailInput.props.value).toBe('test@example.com');
-    expect(passwordInput.props.value).toBe('password123');
+    expect(emailInput.props.value).toBe("test@example.com");
+    expect(passwordInput.props.value).toBe("password123");
   });
 });
