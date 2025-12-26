@@ -1,25 +1,12 @@
-import { APPWRITE_CONFIG } from "@/constants/appwrite";
 import { useAuth } from "@/context/AuthContext";
-import { teams } from "@/lib/appwrite";
 import { getPasswordStrength, validateEmail } from "@/lib/authUtils";
+
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Alert } from "react-native";
 
 type AuthTab = "login" | "register";
-
-const checkIfUserIsAliado = async (): Promise<boolean> => {
-  try {
-    const teamsList = await teams.list();
-    return teamsList.teams.some(
-      (t: any) => t.$id === APPWRITE_CONFIG.TEAM_ALIADOS_ID
-    );
-  } catch (error) {
-    console.error("Error verificando team aliado:", error);
-    return false;
-  }
-};
 
 export const useAuthForm = () => {
   const router = useRouter();
@@ -31,7 +18,9 @@ export const useAuthForm = () => {
     isConfigured,
     login,
     register,
+    verifyEmail,
     logout,
+
     recoverPassword,
     loginWithGoogle,
     refresh,
@@ -49,6 +38,8 @@ export const useAuthForm = () => {
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [pendingLogin, setPendingLogin] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [verificationCode, setVerificationCode] = useState("");
 
   useEffect(() => {
     if (params.tab === "register" || params.tab === "login") {
@@ -176,47 +167,35 @@ export const useAuthForm = () => {
 
   const handleRegister = useCallback(async () => {
     try {
-      setSnackbarMessage(t("auth.messages.register_success"));
-      setSnackbarVisible(true);
       await register(email, password, name);
-      // Refrescar usuario para asegurar contexto actualizado
-      if (typeof refresh === "function") {
-        await refresh();
-      }
-      // Esperar un poco para asegurar que el contexto se actualice
-      await new Promise((resolve) => setTimeout(resolve, 300));
-      // Ahora usar el user actualizado del hook
-      const aliadoTeamId = APPWRITE_CONFIG.TEAM_ALIADOS_ID;
-
-      if (user && user.email === email) {
-        try {
-          await teams.createMembership(aliadoTeamId, user.email, ["owner"]);
-        } catch (err) {
-          // Si ya es miembro, ignorar error
-          const errorMessage = err instanceof Error ? err.message : String(err);
-          if (errorMessage.includes("already a member")) {
-            // Ignore
-          } else {
-            console.warn("No se pudo agregar al team aliado:", err);
-          }
-        }
-      }
-      const isAliado = await checkIfUserIsAliado();
-      const targetRoute = isAliado
-        ? "/(panel-aliado)/dashboard"
-        : "/(clientes)";
-      setTimeout(() => {
-        router.replace(targetRoute);
-      }, 1500);
+      setSnackbarMessage(t("auth.messages.verification_code_sent"));
+      setSnackbarVisible(true);
+      setIsVerifying(true);
     } catch (error) {
       setSnackbarVisible(false);
       const message =
         error instanceof Error ? error.message : t("auth.errors.register_fail");
-      setTimeout(() => {
-        Alert.alert(t("auth.errors.register_error_title"), message);
-      }, 400);
+      Alert.alert(t("auth.errors.register_error_title"), message);
     }
-  }, [register, email, password, name, router, user, refresh]);
+  }, [register, email, password, name, t]);
+
+  const handleVerifyEmail = useCallback(async () => {
+    if (!verificationCode.trim()) {
+      Alert.alert(t("auth.errors.error_title"), t("auth.errors.code_required"));
+      return;
+    }
+
+    try {
+      await verifyEmail(verificationCode);
+      setSnackbarMessage(t("auth.messages.register_success"));
+      setSnackbarVisible(true);
+      setIsVerifying(false);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : t("auth.errors.verify_fail");
+      Alert.alert(t("auth.errors.verify_error_title"), message);
+    }
+  }, [verifyEmail, verificationCode, t]);
 
   const handleLogout = useCallback(async () => {
     try {
@@ -249,19 +228,15 @@ export const useAuthForm = () => {
 
   useEffect(() => {
     if (pendingLogin && user) {
-      (async () => {
-        try {
-          const isAliado = await checkIfUserIsAliado();
-          const targetRoute = isAliado
-            ? "/(panel-aliado)/dashboard"
-            : "/(clientes)";
-          router.replace(targetRoute);
-        } catch (redirectError) {
-          router.replace("/(clientes)");
-        } finally {
-          setPendingLogin(false);
-        }
-      })();
+      const isAliado =
+        user.publicMetadata?.role === "aliado" ||
+        user.unsafeMetadata?.role === "aliado";
+
+      const targetRoute = isAliado
+        ? "/(panel-aliado)/dashboard"
+        : "/(clientes)";
+      router.replace(targetRoute);
+      setPendingLogin(false);
     }
   }, [pendingLogin, user, router]);
 
@@ -298,5 +273,10 @@ export const useAuthForm = () => {
     handleRegister,
     handleLogout,
     handleGoogleLogin,
+    isVerifying,
+    setIsVerifying,
+    verificationCode,
+    setVerificationCode,
+    handleVerifyEmail,
   };
 };

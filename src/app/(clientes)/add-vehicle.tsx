@@ -203,7 +203,7 @@ export default function AddVehicleScreen() {
         VEHICULOS_COLLECTION_ID,
         ID.unique(),
         {
-          userId: user.$id,
+          userId: user.id,
           marca: formData.marca.trim(),
           linea: formData.linea.trim(),
           combustible: formData.combustible.trim(),

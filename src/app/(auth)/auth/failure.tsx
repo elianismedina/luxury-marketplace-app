@@ -14,7 +14,7 @@ export default function AuthFailure() {
       [
         {
           text: "OK",
-          onPress: () => router.replace("/login"),
+          onPress: () => router.replace("/sign-in"),
         },
       ]
     );
@@ -31,7 +31,7 @@ export default function AuthFailure() {
         </Text>
         <Button
           mode="contained"
-          onPress={() => router.replace("/login")}
+          onPress={() => router.replace("/sign-in")}
           style={styles.button}
           buttonColor="#FF0000"
         >

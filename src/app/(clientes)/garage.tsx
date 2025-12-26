@@ -116,7 +116,7 @@ export default function GarageScreen() {
       const response = await databases.listDocuments(
         databaseId,
         VEHICULOS_COLLECTION_ID,
-        [Query.equal("userId", user.$id), Query.orderDesc("$createdAt")]
+        [Query.equal("userId", user.id), Query.orderDesc("$createdAt")]
       );
       setVehiculos(response.documents as unknown as Vehiculo[]);
     } catch (error) {

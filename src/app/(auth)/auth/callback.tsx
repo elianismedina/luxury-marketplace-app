@@ -32,7 +32,7 @@ export default function AuthCallback() {
       } catch (error) {
         console.error("OAuth callback error:", error);
         // On error, go back to login
-        router.replace("/login");
+        router.replace("/sign-in");
       }
     };
 

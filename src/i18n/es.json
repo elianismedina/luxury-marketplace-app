@@ -47,10 +47,21 @@
     "continue_with_google": "Continuar con Google",
     "aliado_question": "¿Eres un taller, vendes repuestos y accesorios o prestas servicios?",
     "aliado_register_link": "Registrate como Aliado Zona Pits",
+    "verify_email_title": "Verifica tu correo",
+    "verify_email_subtitle": "Hemos enviado un código a {{email}}",
+    "verification_code_label": "Código de verificación",
+    "verify_button": "Verificar Código",
+    "back_to_register": "Volver al registro",
+    "no_account_question": "¿No tienes una cuenta?",
+    "already_have_account": "¿Ya tienes una cuenta?",
+
+
     "messages": {
       "login_success": "✓ Sesión iniciada correctamente",
       "register_success": "✓ Cuenta creada correctamente",
       "google_login_success": "✓ Sesión iniciada con Google",
+      "verification_code_sent": "✓ Código enviado a tu email",
+
       "logout_title": "Sesión cerrada",
       "logout_message": "Has cerrado sesión correctamente."
     },
@@ -68,8 +79,12 @@
       "login_fail": "No se pudo iniciar sesión.",
       "register_fail": "No se pudo completar el registro.",
       "logout_fail": "No se pudo cerrar la sesión.",
-      "google_login_fail": "No se pudo iniciar sesión con Google."
+      "google_login_fail": "No se pudo iniciar sesión con Google.",
+      "code_required": "Por favor ingresa el código de 6 dígitos",
+      "verify_fail": "El código de verificación es incorrecto o ha expirado.",
+      "verify_error_title": "Error de verificación"
     },
+
     "recovery": {
       "email_sent_title": "Correo enviado",
       "email_sent_message": "Hemos enviado un enlace de recuperación a {{email}}.\n\n1. Revisa tu correo\n2. Abre el enlace en el email\n3. Copia el userId y secret de la URL\n4. Usa el botón \"Ya tengo el código\" abajo",

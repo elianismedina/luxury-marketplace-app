@@ -14,7 +14,7 @@ import Logo from "@/components/Logo";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslation } from "react-i18next";
 
-const introImage = require("../../assets/images/IntroImage.webp");
+const introImage = require("../../../assets/images/IntroImage.webp");
 
 export default function WelcomeScreen() {
   const router = useRouter();
@@ -45,7 +45,7 @@ export default function WelcomeScreen() {
           <View style={styles.actions}>
             <Button
               mode="contained"
-              onPress={() => router.push("/login?tab=register")}
+              onPress={() => router.push("/sign-up")}
               style={styles.button}
               contentStyle={styles.buttonContent}
               labelStyle={styles.buttonLabel}
@@ -54,13 +54,24 @@ export default function WelcomeScreen() {
             </Button>
             <Button
               mode="outlined"
-              onPress={() => router.push("/login?tab=login")}
+              onPress={() => router.push("/sign-in")}
               style={[styles.button, styles.outlinedButton]}
               contentStyle={styles.buttonContent}
               labelStyle={styles.buttonLabel}
               textColor="#ffffff"
             >
               {t("welcome.login_btn")}
+            </Button>
+            <Button
+              mode="text"
+              onPress={() => router.push("/(auth)/(registro-aliado)/registro")}
+              textColor="#ffffff"
+              labelStyle={[
+                styles.buttonLabel,
+                { textDecorationLine: "underline" },
+              ]}
+            >
+              {t("auth.aliado_register_link")}
             </Button>
           </View>
         </View>

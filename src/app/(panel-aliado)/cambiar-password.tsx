@@ -123,7 +123,7 @@ export default function CambiarPasswordScreen() {
         [
           {
             text: "Continuar",
-            onPress: () => router.back(),
+            onPress: () => router.replace("/(panel-aliado)/dashboard"),
           },
         ]
       );
@@ -293,7 +293,7 @@ export default function CambiarPasswordScreen() {
 
             <Button
               mode="outlined"
-              onPress={() => router.back()}
+              onPress={() => router.replace("/(panel-aliado)/dashboard")}
               disabled={loading}
               style={styles.cancelButton}
               contentStyle={styles.buttonContent}

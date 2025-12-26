@@ -1,198 +1,149 @@
 # Copilot Instructions for Luxury Marketplace
 
-## Project Overview
+## Essential Project Overview
 
-Luxury marketplace mobile app built with **Expo Router** (file-based routing), **React Native Paper** (Material Design 3), **styled-components**, and **Appwrite** (backend-as-a-service). Targets iOS, Android, and Web platforms with React Native's new architecture enabled.
+This is a cross-platform (iOS/Android/Web) marketplace app using **Expo Router** (file-based routing), **React Native Paper** (Material Design 3), **styled-components** (strictly no inline styles), and **Appwrite** (backend). React Native's new architecture is enabled. All navigation, theming, and data flows are tightly integrated with these technologies.
 
 ## Architecture & Key Patterns
 
 ### File-Based Routing (Expo Router)
 
-- Routes live in `src/app/` directory
-- `(tabs)/` = tab navigator group (authenticated screens)
-- `_layout.tsx` files define nested navigation layouts
-- `welcome.tsx` and `login.tsx` are public routes; tabs require authentication
-- `unstable_settings.initialRouteName` in `src/app/_layout.tsx` sets default route (`"welcome"`)
+- All routes are in `src/app/`.
+- Authenticated screens: in `(tabs)/` group. Public screens: `welcome.tsx`, `login.tsx`.
+- `_layout.tsx` files define navigation structure and providers.
+- `unstable_settings.initialRouteName` in `src/app/_layout.tsx` sets the default route.
 
-### Triple Theme System (Critical Pattern)
+### Triple Theme System (Critical)
 
-The app uses **three theme systems simultaneously** - understand this before styling:
+**Never use inline styles.** All custom UI must use styled-components from `src/components/styled.ts`.
 
-1. **React Navigation Theme** (`DarkTheme`, `DefaultTheme`): Controls navigation bars and headers
-2. **React Native Paper Theme** (`paperLightTheme`, `paperDarkTheme`): Controls Paper components (Button, TextInput, etc.)
-3. **styled-components Theme** (`theme` from `src/theme/theme.ts`): Controls custom styled components
+Three theme systems are always active:
 
-**Theming Implementation:**
-- `src/app/_layout.tsx` wraps app in `StyledThemeProvider` → `PaperProvider` → `AuthProvider` → `ThemeProvider`
-- Access styled-components theme: `import { useTheme } from "styled-components/native"`
-- Access Paper theme: `import { useTheme } from "react-native-paper"`
-- Theme defined in `src/theme/theme.ts` with TypeScript augmentation for `styled-components/native`
+1. **React Navigation Theme**: Navigation bars/headers
+2. **React Native Paper Theme**: Paper components (Button, TextInput, etc.)
+3. **styled-components Theme**: All custom UI (see `src/theme/theme.ts`)
+
+**Access patterns:**
+
+- Use `useTheme` from `styled-components/native` for custom components
+- Use `useTheme` from `react-native-paper` for Paper components
+- Providers are nested in `src/app/_layout.tsx`: `StyledThemeProvider` → `PaperProvider` → `AuthProvider` → `ThemeProvider`
 
 ### Styled Components Pattern
 
-**All custom UI components use styled-components** - never create inline styles. Reusable components in `src/components/styled.ts`:
+- **All custom UI uses styled-components** (see `src/components/styled.ts`).
+- Never use inline styles or StyleSheet.create.
+- Example:
+  ```tsx
+  import { Card, Title } from "@/components/styled";
+  import { useTheme } from "styled-components/native";
+  const theme = useTheme();
+  <Card elevated>
+    <Title color={theme.colors.primary}>Heading</Title>
+  </Card>;
+  ```
+- Key components: `Container`, `Card`, `Title`, `BodyText`, `PrimaryButton`, `Input`, etc.
 
-```tsx
-import { Card, Title, BodyText, PaddedContainer } from "@/components/styled";
-import { useTheme } from "styled-components/native";
+### Authentication & AuthContext
 
-const theme = useTheme(); // Access colors, spacing, fontSize, etc.
-<Card elevated>
-  <Title color={theme.colors.primary}>Heading</Title>
-</Card>
-```
+- Centralized in `src/context/AuthContext.tsx` (see methods: `login`, `register`, `logout`, `refresh`, `loginWithGoogle`, etc.)
+- `initializing` prevents UI flicker on load
+- Authenticated routes: in `(tabs)/` (redirect to `/login` if not authenticated)
+- Public routes: `welcome.tsx`, `login.tsx` (redirect to `/(tabs)` if already authenticated)
 
-Key styled components: `Container`, `ScrollContainer`, `SafeContainer`, `CenterContainer`, `PaddedContainer`, `Card`, `Surface`, `Title`, `Subtitle`, `BodyText`, `PrimaryButton`, `SecondaryButton`, `OutlineButton`, `Input`, `Row`, `Column`, `Badge`, `Divider`, `Avatar`
+### OAuth & Appwrite Integration (Platform-Specific)
 
-### Authentication Flow
+- **OAuth flow is different for web and native.**
+  - Web: `account.createOAuth2Session()` (full-page redirect)
+  - Native: Uses `expo-web-browser` and custom app scheme
+- Callback handled in `src/app/auth/callback.tsx` (waits, refreshes user, then navigates)
+- See `MOBILE_OAUTH_SETUP.md`, `GOOGLE_OAUTH_SETUP.md`, `OAUTH_TROUBLESHOOTING.md` for troubleshooting and setup
+- Appwrite SDK is platform-aware (see `src/lib/appwrite.ts`):
+  ```tsx
+  const isWeb = Platform.OS === "web";
+  if (isWeb) require("appwrite");
+  else require("react-native-appwrite");
+  ```
 
-1. **Root Layout** (`src/app/_layout.tsx`): Shows loading spinner while `initializing` is true
-2. **AuthContext** (`src/context/AuthContext.tsx`): Central auth state management
-   - `initializing`: true while checking auth on app load (prevents flashing wrong screen)
-   - `user`: current Appwrite user object or null
-   - `isConfigured`: checks if Appwrite env vars are set
-   - Methods: `login`, `register`, `logout`, `refresh`, `recoverPassword`, `confirmPasswordReset`, `loginWithGoogle`
-3. **Protected Routes**: `(tabs)/_layout.tsx` renders `<Redirect href="/login" />` if no user after initialization
-4. **Auto-navigation**: `welcome.tsx` and `login.tsx` redirect authenticated users to `/(tabs)` using `router.replace()`
-
-### OAuth Implementation (Platform-Specific)
-
-**Critical:** OAuth flow differs between web and native (see `MOBILE_OAUTH_SETUP.md`, `GOOGLE_OAUTH_SETUP.md`, `OAUTH_TROUBLESHOOTING.md`):
-
-**Web:** `account.createOAuth2Session()` redirects full page to Google, returns to `/auth/callback`
-**Native:** Uses `expo-web-browser` with `openAuthSessionAsync()` and app scheme `appwrite-callback-6910079a00217d16d0ed://`
-
-**Callback Flow:**
-1. OAuth redirects to `src/app/auth/callback.tsx`
-2. Waits 1500ms for Appwrite session finalization
-3. Calls `refresh()` to update user state
-4. Navigates to `/(tabs)` via `router.replace()`
-
-**Platform Configuration Required:**
-- Appwrite Console: Add Web, Android (`host.exp.exponent`), and iOS (`host.exp.Exponent`) platforms
-- Google Cloud Console: OAuth clients for Web, Android, iOS with correct redirect URIs
-- `app.json`: scheme includes `luxurymarketplace` and `appwrite-callback-6910079a00217d16d0ed`
-
-### Appwrite SDK Platform Detection
-
-**Critical pattern** in `src/lib/appwrite.ts`:
-```tsx
-const isWeb = Platform.OS === "web";
-if (isWeb) {
-  const appwrite = require("appwrite"); // Web SDK
-} else {
-  const rnAppwrite = require("react-native-appwrite"); // Native SDK
-}
-```
-- Web SDK doesn't support `client.setPlatform()` - only call for native
-- Always check `isAppwriteConfigured` before operations
-- Environment variables: `EXPO_PUBLIC_APPWRITE_ENDPOINT`, `EXPO_PUBLIC_APPWRITE_PROJECT_ID`, `EXPO_PUBLIC_APPWRITE_PLATFORM`, `EXPO_PUBLIC_APPWRITE_DATABASE_ID`, `EXPO_PUBLIC_APPWRITE_BUCKET_VEHICULOS_ID`
+**Environment variables:** Always check `isAppwriteConfigured` before any Appwrite operation. Key env vars: `EXPO_PUBLIC_APPWRITE_ENDPOINT`, `EXPO_PUBLIC_APPWRITE_PROJECT_ID`, etc.
 
 ### Data Management & Storage
 
-**Pattern:** CRUD operations use Appwrite databases and storage:
-```tsx
-import { databases, storage, databaseId, bucketId, ID } from "@/lib/appwrite";
+- All CRUD uses Appwrite databases/storage (see `src/lib/appwrite.ts`).
+- Image upload: use Expo ImagePicker, upload to Appwrite Storage, store file ID in DB (see `edit-vehicle.tsx`).
 
-// Create document
-await databases.createDocument(databaseId, collectionId, ID.unique(), data);
+### Import Aliases
 
-// Upload image
-const file = { name: "image.jpg", type: "image/jpeg", uri: imageUri, size };
-await storage.createFile(bucketId, ID.unique(), file);
+- Use `@/*` for all imports from `src/` (see `tsconfig.json` paths).
 
-// Get image URL
-const url = `${endpoint}/storage/buckets/${bucketId}/files/${fileId}/view?project=${projectId}`;
-```
-
-**Image Picker Pattern** (see `edit-vehicle.tsx`, `(tabs)/three.tsx`):
-1. Request permissions: `ImagePicker.requestMediaLibraryPermissionsAsync()`
-2. Launch picker: `ImagePicker.launchImageLibraryAsync({ mediaTypes: "images", allowsEditing: true, quality: 0.8 })`
-3. Upload to Appwrite Storage, get file ID
-4. Store file ID in database document
-
-### Import Alias
-
-Use `@/*` for all imports from `src/`:
-
-```tsx
-import { useAuth } from "@/context/AuthContext";
-import { theme } from "@/theme/theme";
-import { Card, Title } from "@/components/styled";
-```
-
-Configured in `tsconfig.json`: `"paths": { "@/*": ["./src/*"] }`
-
-## Development Workflow
+## Developer Workflow
 
 ### Running the App
 
 ```bash
-npm start          # Start Expo dev server
-npm run android    # Android emulator (requires Android Studio)
-npm run ios        # iOS simulator (requires Xcode, macOS only)
-npm run web        # Web browser (http://localhost:8081)
+npm start          # Expo dev server
+npm run android    # Android emulator
+npm run ios        # iOS simulator (macOS only)
+npm run web        # Web browser
 ```
 
-**Note:** Expo Go has OAuth limitations - use EAS Build or development builds for full OAuth testing on mobile.
+**Expo Go has OAuth limitations** – use EAS/dev builds for full OAuth testing.
 
-### Project Structure Conventions
+### Project Structure
 
-- **Components**: Reusable UI in `src/components/` (styled.ts, useColorScheme, etc.)
-- **Screens**: Route components in `src/app/` (follow Expo Router conventions)
-- **Context**: Global state in `src/context/` (currently only AuthContext)
-- **Theme**: All theme definitions in `src/theme/` (theme.ts, paperTheme.ts)
-- **Constants**: Colors and config in `src/constants/`
-- **Assets**: Images in `assets/images/`, fonts in `assets/fonts/`, mock data in `assets/data/`
-- **Lib**: External service integrations in `src/lib/` (currently only appwrite.ts)
+- Components: `src/components/` (all custom UI in `styled.ts`)
+- Screens: `src/app/` (file-based routing)
+- Context: `src/context/` (auth only)
+- Theme: `src/theme/`
+- Constants: `src/constants/`
+- Assets: `assets/`
+- Lib: `src/lib/` (Appwrite integration)
 
 ### TypeScript
 
-- Strict mode enabled
-- Expo typed routes experiment active (`experiments.typedRoutes: true`)
-- Use `expo-env.d.ts` for Expo-specific type declarations
-- styled-components types extended via declaration merging in `src/theme/theme.ts`
+- Strict mode is enabled
+- Expo typed routes (`experiments.typedRoutes: true`)
+- Use `expo-env.d.ts` for Expo types
+- styled-components types extended in `src/theme/theme.ts`
 
-## Key Files to Know
+## Key Files
 
-- `src/app/_layout.tsx`: Root layout with providers, splash screen, font loading
-- `src/context/AuthContext.tsx`: Auth state, login/register/logout/OAuth methods
-- `src/lib/appwrite.ts`: Platform-aware Appwrite SDK initialization
-- `src/theme/theme.ts`: Master theme definition (colors, spacing, typography, shadows)
-- `src/components/styled.ts`: All reusable styled-components
-- `app.json`: Expo config (new architecture, schemes, Android edge-to-edge)
-- `MOBILE_OAUTH_SETUP.md`, `GOOGLE_OAUTH_SETUP.md`, `OAUTH_TROUBLESHOOTING.md`: OAuth setup guides
+- `src/app/_layout.tsx`: Root layout/providers
+- `src/context/AuthContext.tsx`: Auth logic
+- `src/lib/appwrite.ts`: Appwrite SDK/platform logic
+- `src/theme/theme.ts`: Theme definition
+- `src/components/styled.ts`: All styled-components
+- `app.json`: Expo config
+- `MOBILE_OAUTH_SETUP.md`, `GOOGLE_OAUTH_SETUP.md`, `OAUTH_TROUBLESHOOTING.md`: OAuth setup/troubleshooting
 
 ## Common Tasks
 
-### Adding New Authenticated Screen
+### Add Authenticated Screen
 
-1. Create file in `src/app/(tabs)/screenname.tsx`
-2. Use styled-components from `@/components/styled` for UI
-3. Add `<Tabs.Screen>` entry in `src/app/(tabs)/_layout.tsx` with icon and title
-4. Access user via `const { user } = useAuth()`
+1. Create in `src/app/(tabs)/screenname.tsx`
+2. Use styled-components from `@/components/styled`
+3. Add `<Tabs.Screen>` in `src/app/(tabs)/_layout.tsx`
+4. Access user: `const { user } = useAuth()`
 
-### Adding New Public Screen
+### Add Public Screen
 
-1. Create file in `src/app/screenname.tsx`
-2. Add `<Stack.Screen>` entry in `src/app/_layout.tsx` with header options
-3. Redirect authenticated users: `if (user) { router.replace("/(tabs)"); }`
+1. Create in `src/app/screenname.tsx`
+2. Add `<Stack.Screen>` in `src/app/_layout.tsx`
+3. Redirect if authenticated: `if (user) router.replace("/(tabs)")`
 
-### Working with Themes
+### Theming
 
-- **Never use inline styles** - always use styled-components or Paper components
-- Access theme: `const theme = useTheme()` (import from `styled-components/native`)
-- Use theme properties: `theme.colors.primary`, `theme.spacing.md`, `theme.fontSize.lg`
-- For Paper components: `<Button mode="contained">` auto-applies theme
+- Only use styled-components or Paper components (never inline styles)
+- Access theme: `const theme = useTheme()` from `styled-components/native`
+- Use theme values: `theme.colors.primary`, `theme.spacing.md`, etc.
 
-### Debugging OAuth Issues
+### OAuth Debugging
 
-1. Check `OAUTH_TROUBLESHOOTING.md` for common 401 errors
-2. Verify platforms configured in Appwrite Console (Web + Android + iOS)
-3. Check redirect URIs match Google Cloud Console configuration
-4. Enable console logs in `AuthContext.tsx` `loginWithGoogle()` method
-5. Test web first (simpler flow), then mobile
+1. See `OAUTH_TROUBLESHOOTING.md` for 401 errors
+2. Check Appwrite/Google Console platform configs
+3. Enable logs in `AuthContext.tsx` if needed
+4. Test web first, then mobile
 
 ### Mock Data
 
-Sample products in `assets/data/products.ts` - legacy from template, not actively used in vehicle marketplace features.
+- `assets/data/products.ts` is legacy, not used in main features

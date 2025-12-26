@@ -9,13 +9,14 @@ import {
   TouchableWithoutFeedback,
   View,
 } from "react-native";
-import { Button, Paragraph, Text, Title, useTheme } from "react-native-paper";
+import { Paragraph, Text, Title, useTheme } from "react-native-paper";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { SignOutButton } from "./SignOutButton";
 
 interface SidebarProps {
   visible: boolean;
@@ -212,18 +213,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ visible, onClose }) => {
             />
           </View>
 
-          <View style={[styles.section, { borderBottomWidth: 0 }]}>
-            <Button
-              mode="outlined"
-              onPress={handleLogout}
-              disabled={!user || loading}
-              loading={loading}
-              textColor={theme.colors.error}
-              style={{ borderColor: theme.colors.error, marginTop: 10 }}
-              icon="logout"
-            >
-              Cerrar Sesión
-            </Button>
+          <View
+            style={[
+              styles.section,
+              { borderBottomWidth: 0, paddingVertical: 10 },
+            ]}
+          >
+            <SignOutButton />
           </View>
         </ScrollView>
       </Animated.View>

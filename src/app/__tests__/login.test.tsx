@@ -49,7 +49,7 @@ jest.mock("@/context/AuthContext", () => ({
 }));
 
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import AuthScreen from "../login";
+import AuthScreen from "../(auth)/sign-in";
 
 const renderWithProviders = (ui: React.ReactElement) => {
   return render(

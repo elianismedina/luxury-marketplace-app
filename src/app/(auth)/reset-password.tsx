@@ -129,7 +129,7 @@ export default function ResetPasswordScreen() {
         [
           {
             text: "Ir al login",
-            onPress: () => router.replace("/login"),
+            onPress: () => router.replace("/sign-in"),
           },
         ]
       );
@@ -322,7 +322,7 @@ export default function ResetPasswordScreen() {
 
             <Button
               mode="text"
-              onPress={() => router.replace("/login")}
+              onPress={() => router.replace("/sign-in")}
               disabled={loading}
               style={styles.cancelButton}
             >

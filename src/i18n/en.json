@@ -47,10 +47,21 @@
     "continue_with_google": "Continue with Google",
     "aliado_question": "Are you a workshop, selling parts and accessories, or providing services?",
     "aliado_register_link": "Register as a Zona Pits Partner",
+    "verify_email_title": "Verify your email",
+    "verify_email_subtitle": "We've sent a code to {{email}}",
+    "verification_code_label": "Verification Code",
+    "verify_button": "Verify Code",
+    "back_to_register": "Back to registration",
+    "no_account_question": "Don't have an account?",
+    "already_have_account": "Already have an account?",
+
+
     "messages": {
       "login_success": "✓ Logged in successfully",
       "register_success": "✓ Account created successfully",
       "google_login_success": "✓ Logged in with Google",
+      "verification_code_sent": "✓ Code sent to your email",
+
       "logout_title": "Logged out",
       "logout_message": "You have logged out successfully."
     },
@@ -68,8 +79,12 @@
       "login_fail": "Could not log in.",
       "register_fail": "Could not complete registration.",
       "logout_fail": "Could not log out.",
-      "google_login_fail": "Could not log in with Google."
+      "google_login_fail": "Could not log in with Google.",
+      "code_required": "Please enter the 6-digit code",
+      "verify_fail": "The verification code is incorrect or has expired.",
+      "verify_error_title": "Verification Error"
     },
+
     "recovery": {
       "email_sent_title": "Email sent",
       "email_sent_message": "We have sent a recovery link to {{email}}.\n\n1. Check your email\n2. Open the link in the email\n3. Copy the userId and secret from the URL\n4. Use the \"I already have the code\" button below",

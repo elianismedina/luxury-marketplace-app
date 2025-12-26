@@ -1,4 +1,5 @@
 import Logo from "@/components/Logo";
+import { SignOutButton } from "@/components/SignOutButton";
 import { useAuth } from "@/context/AuthContext";
 import {
   databaseId,
@@ -6,6 +7,7 @@ import {
   isAppwriteConfigured,
   Query,
 } from "@/lib/appwrite";
+import { useClerk } from "@clerk/clerk-expo";
 import { useFocusEffect, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
@@ -48,6 +50,8 @@ const GridItem = ({
 export default function AliadoDashboardScreen() {
   const router = useRouter();
   const { logout, loading: authLoading, user, initializing } = useAuth();
+  const { signOut } = useClerk();
+
   const [hasPerfil, setHasPerfil] = useState(false);
   const [hasSucursales, setHasSucursales] = useState(false);
   const [hasServicios, setHasServicios] = useState(false);
@@ -57,7 +61,7 @@ export default function AliadoDashboardScreen() {
   // Redirect to welcome if no user (after initialization)
   useEffect(() => {
     if (!initializing && !user) {
-      router.replace("/welcome");
+      router.replace("/(auth)/welcome");
     }
   }, [initializing, user, router]);
 
@@ -102,6 +106,7 @@ export default function AliadoDashboardScreen() {
 
   if (!user) return null;
 
+  // (Debug eliminado)
   const checkPerfilEstado = async () => {
     if (!isAppwriteConfigured || !user || !user.email) {
       setHasPerfil(false);
@@ -126,11 +131,7 @@ export default function AliadoDashboardScreen() {
       const perfilRes = await databases.listDocuments(
         databaseId,
         "perfil_aliado",
-        [
-          Query.equal("aliado", aliadoId),
-          Query.equal("activo", true),
-          Query.select(["*", "categoria.*"]),
-        ]
+        [Query.equal("aliado", aliadoId), Query.equal("activo", true)]
       );
 
       let perfilDoc =
@@ -144,9 +145,20 @@ export default function AliadoDashboardScreen() {
 
       const hasPerfil = perfilRes.documents.length > 0;
       const hasSucursales = sucursalRes.documents.length > 0;
-      const categoria = perfilDoc?.categoria;
-      const hasServicios =
-        hasPerfil && Array.isArray(categoria) && categoria.length > 0;
+
+      // Normalizar categoria: puede ser array, string, objeto o undefined
+      let categoria = perfilDoc?.categoria;
+      // (Debug log eliminado)
+      let categoriaCount = 0;
+      if (Array.isArray(categoria)) {
+        categoriaCount = categoria.length;
+      } else if (categoria) {
+        // Puede ser string o un solo objeto
+        categoriaCount = 1;
+      } else {
+        // vacío
+      }
+      const hasServicios = hasPerfil && categoriaCount > 0;
 
       setHasPerfil(hasPerfil);
       setHasSucursales(hasSucursales);
@@ -156,7 +168,9 @@ export default function AliadoDashboardScreen() {
       setHasSucursales(false);
       setHasServicios(false);
     } finally {
-      setTienePasswordTemporal(user?.prefs?.temporaryPassword ?? false);
+      setTienePasswordTemporal(
+        user?.unsafeMetadata?.temporaryPassword === true
+      );
       setLoading(false);
     }
   };
@@ -169,7 +183,8 @@ export default function AliadoDashboardScreen() {
         style: "destructive",
         onPress: async () => {
           try {
-            await logout();
+            await signOut();
+            router.replace("/(auth)/welcome");
           } catch (error) {
             Alert.alert("Error", "Hubo un problema al cerrar sesión.");
           }
@@ -194,6 +209,7 @@ export default function AliadoDashboardScreen() {
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.container}>
+          {/* Debug eliminado */}
           <View style={styles.header}>
             <View style={styles.headerTop}>
               <Logo width={80} height={80} />
@@ -284,6 +300,9 @@ export default function AliadoDashboardScreen() {
                 onPress={handleLogout}
                 color="#EF4444"
               />
+            </View>
+            <View style={{ marginTop: 32, marginBottom: 20 }}>
+              <SignOutButton />
             </View>
           </View>
         </View>

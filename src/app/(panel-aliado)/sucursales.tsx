@@ -317,7 +317,11 @@ export default function SucursalesScreen() {
         <IconButton
           icon="arrow-left"
           size={28}
-          onPress={() => (showForm ? setShowForm(false) : router.back())}
+          onPress={() =>
+            showForm
+              ? setShowForm(false)
+              : router.replace("/(panel-aliado)/dashboard")
+          }
           iconColor="#FFFFFF"
         />
         <Text variant="titleLarge" style={styles.headerTitle}>

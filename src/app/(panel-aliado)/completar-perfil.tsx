@@ -12,10 +12,11 @@ import {
   View,
 } from "react-native";
 import { ID } from "react-native-appwrite";
-import { Button, Card, HelperText, TextInput } from "react-native-paper";
+import { Button, Card, Chip, HelperText, TextInput } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import Logo from "@/components/Logo";
+import { CATEGORIAS_ALIADO } from "@/constants/categorias";
 import { useAuth } from "@/context/AuthContext";
 import {
   bucketId,
@@ -32,10 +33,12 @@ type PerfilFormData = {
   descripcion: string;
   sitio_web: string;
   logo_url?: string;
+  categoria: string[];
 };
 
 export default function CompletarPerfilScreen() {
   const router = useRouter();
+  console.log("[COMPLETAR PERFIL] Renderizando pantalla. User:", user);
   const { user, initializing } = useAuth();
   const [loading, setLoading] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -43,6 +46,7 @@ export default function CompletarPerfilScreen() {
     descripcion: "",
     sitio_web: "",
     logo_url: undefined,
+    categoria: [],
   });
   const [errors, setErrors] = useState<Partial<PerfilFormData>>({});
 
@@ -73,6 +77,7 @@ export default function CompletarPerfilScreen() {
             descripcion: perfil.descripcion || "",
             sitio_web: perfil.sitio_web || "",
             logo_url: perfil.logo_url || undefined,
+            categoria: perfil.categoria || [],
           });
         }
       } catch (error) {
@@ -114,8 +119,30 @@ export default function CompletarPerfilScreen() {
       newErrors.sitio_web = "Ingrese una URL válida (ej: www.mitaller.com)";
     }
 
+    // Validar categorías
+    if (formData.categoria.length === 0) {
+      newErrors.categoria = [
+        "Debe seleccionar al menos una categoría" as any,
+      ] as any;
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  const toggleCategoria = (id: string) => {
+    setFormData((prev) => {
+      const isSelected = prev.categoria.includes(id);
+      const newCategoria = isSelected
+        ? prev.categoria.filter((c) => c !== id)
+        : [...prev.categoria, id];
+
+      if (errors.categoria) {
+        setErrors({ ...errors, categoria: undefined });
+      }
+
+      return { ...prev, categoria: newCategoria };
+    });
   };
 
   const pickImage = async () => {
@@ -172,6 +199,7 @@ export default function CompletarPerfilScreen() {
   };
 
   const handleSubmit = async () => {
+    console.log("[COMPLETAR PERFIL] handleSubmit llamado");
     if (!validateForm()) {
       Alert.alert("Error", "Por favor corrige los errores en el formulario");
       return;
@@ -223,17 +251,21 @@ export default function CompletarPerfilScreen() {
         descripcion: formData.descripcion.trim(),
         sitio_web: formData.sitio_web.trim() || null,
         logo_url: formData.logo_url || null,
+        categoria: formData.categoria,
         activo: true,
       };
+      console.log("[COMPLETAR PERFIL] Objeto enviado a Appwrite:", perfilData);
 
       if (existingPerfilRes.documents.length > 0) {
         // Update existing perfil
-        await databases.updateDocument(
+        const perfilId = existingPerfilRes.documents[0].$id;
+        const updated = await databases.updateDocument(
           databaseId,
           PERFIL_ALIADO_COLLECTION_ID,
-          existingPerfilRes.documents[0].$id,
+          perfilId,
           perfilData
         );
+        console.log("[COMPLETAR PERFIL] Documento actualizado:", updated);
       } else {
         // Create new perfil
         await databases.createDocument(
@@ -306,6 +338,36 @@ export default function CompletarPerfilScreen() {
             </View>
           </Card>
 
+          {/* Categorías */}
+          <Card style={styles.categoryCard}>
+            <Text style={styles.sectionTitle}>Categorías de Negocio *</Text>
+            <Text style={styles.sectionSubtitle}>
+              Seleccione una o más categorías que describan sus servicios
+            </Text>
+            <View style={styles.chipContainer}>
+              {CATEGORIAS_ALIADO.map((cat) => {
+                const isSelected = formData.categoria.includes(cat.id);
+                return (
+                  <Chip
+                    key={cat.id}
+                    selected={isSelected}
+                    onPress={() => toggleCategoria(cat.id)}
+                    style={[styles.chip, isSelected && styles.chipSelected]}
+                    selectedColor="#FFFFFF"
+                    showSelectedOverlay
+                  >
+                    {cat.name}
+                  </Chip>
+                );
+              })}
+            </View>
+            {errors.categoria && (
+              <HelperText type="error" visible={!!errors.categoria}>
+                {errors.categoria[0]}
+              </HelperText>
+            )}
+          </Card>
+
           {/* Formulario */}
           <View style={styles.form}>
             <TextInput
@@ -361,12 +423,22 @@ export default function CompletarPerfilScreen() {
               style={styles.submitButton}
               contentStyle={styles.buttonContent}
             >
-              {loading ? "Guardando..." : "Guardar y Continuar"}
+              {(() => {
+                console.log(
+                  "[COMPLETAR PERFIL] Render botón. loading:",
+                  loading,
+                  "uploadingImage:",
+                  uploadingImage,
+                  "disabled:",
+                  loading || uploadingImage
+                );
+                return loading ? "Guardando..." : "Guardar y Continuar";
+              })()}
             </Button>
 
             <Button
               mode="outlined"
-              onPress={() => router.back()}
+              onPress={() => router.replace("/(panel-aliado)/dashboard")}
               disabled={loading}
               style={styles.cancelButton}
               contentStyle={styles.buttonContent}
@@ -418,7 +490,29 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: "#FFFFFF",
+    marginBottom: 8,
+  },
+  sectionSubtitle: {
+    fontSize: 12,
+    color: "#9CA3AF",
     marginBottom: 16,
+  },
+  categoryCard: {
+    backgroundColor: "#1E1E1E",
+    padding: 20,
+    borderRadius: 12,
+    marginBottom: 24,
+  },
+  chipContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  chip: {
+    backgroundColor: "#333333",
+  },
+  chipSelected: {
+    backgroundColor: "#FF0000",
   },
   logoContainer: {
     alignItems: "center",

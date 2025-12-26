@@ -91,7 +91,7 @@ const ServiciosAliadoScreen = () => {
   const [snackbarMessage, setSnackbarMessage] = useState("");
 
   const fetchServicios = useCallback(async () => {
-    if (!user) {
+    if (!user || !aliadoId) {
       setLoading(false);
       return;
     }
@@ -99,7 +99,7 @@ const ServiciosAliadoScreen = () => {
       const res = await databases.listDocuments(
         databaseId,
         SERVICIOS_ALIADO_COLLECTION,
-        [Query.select(["*", "categoria.*"])]
+        [Query.equal("aliado", aliadoId), Query.select(["*", "categoria.*"])]
       );
       setServicios(res.documents || []);
     } catch (e) {
@@ -118,7 +118,7 @@ const ServiciosAliadoScreen = () => {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [user]);
+  }, [user, aliadoId]);
 
   const fetchCategorias = useCallback(async () => {
     if (!user || !isAppwriteConfigured) return;
@@ -422,7 +422,11 @@ const ServiciosAliadoScreen = () => {
         <IconButton
           icon="arrow-left"
           size={28}
-          onPress={() => (showForm ? setShowForm(false) : router.back())}
+          onPress={() =>
+            showForm
+              ? setShowForm(false)
+              : router.replace("/(panel-aliado)/dashboard")
+          }
           iconColor="#FFFFFF"
         />
         <Text variant="titleLarge" style={styles.headerTitle}>
