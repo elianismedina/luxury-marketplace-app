@@ -123,6 +123,7 @@ export default function SignInScreen() {
                 loading={loading}
                 disabled={loading || !emailAddress || !password}
                 style={styles.button}
+                testID="sign-in-button"
               >
                 {t("auth.login_tab")}
               </Button>
