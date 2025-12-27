@@ -19,19 +19,6 @@ const CategoryItemContainer = styled.TouchableOpacity`
   width: 80px;
 `;
 
-const IconContainer = styled.View`
-  width: 60px;
-  height: 60px;
-  border-radius: 30px;
-  background-color: ${({ theme }: { theme: DefaultTheme }) =>
-    theme.colors.surface};
-  justify-content: center;
-  align-items: center;
-  margin-bottom: ${({ theme }: { theme: DefaultTheme }) => theme.spacing.sm}px;
-  border: 1px solid
-    ${({ theme }: { theme: DefaultTheme }) => theme.colors.border};
-`;
-
 const CategoryName = styled.Text`
   font-size: ${({ theme }: { theme: DefaultTheme }) => theme.fontSize.sm}px;
   color: ${({ theme }: { theme: DefaultTheme }) => theme.colors.text};
@@ -66,15 +53,12 @@ const CategoryList = () => {
 
   const renderItem = ({ item }: { item: Category }) => (
     <CategoryItemContainer>
-      <IconContainer>
-        <DynamicSvgIcon
-          iconName={item.icon}
-          width={32}
-          height={32}
-          color={theme.colors.primary}
-        />
-      </IconContainer>
-      <CategoryName>{item.name}</CategoryName>
+      <DynamicSvgIcon
+        iconName={item.icon}
+        label={item.name}
+        size={48}
+        color={theme.colors.primary}
+      />
     </CategoryItemContainer>
   );
 

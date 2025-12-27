@@ -1,5 +1,5 @@
-// @ts-nocheck - Styled components theme types are handled by DefaultTheme interface
 import { SafeAreaView } from "react-native-safe-area-context";
+import type { DefaultTheme } from "styled-components/native";
 import styled from "styled-components/native";
 
 // Containers
