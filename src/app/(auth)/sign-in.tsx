@@ -1,4 +1,5 @@
 import Logo from "@/components/Logo";
+import { useAuth } from "@/context/AuthContext";
 import { useSignIn } from "@clerk/clerk-expo";
 import { Link, useRouter } from "expo-router";
 import * as React from "react";
@@ -12,8 +13,16 @@ import {
 } from "react-native";
 import { Button, Checkbox, Text, TextInput } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
+// Import GoogleOneTap only on web
+let GoogleOneTap: any = null;
+if (Platform.OS === "web") {
+  try {
+    GoogleOneTap = require("@clerk/clerk-react").GoogleOneTap;
+  } catch {}
+}
 
 export default function SignInScreen() {
+  const { loginWithGoogle, loading: authLoading } = useAuth();
   const { isLoaded, signIn, setActive } = useSignIn();
   const router = useRouter();
   const { t } = useTranslation();
@@ -23,6 +32,10 @@ export default function SignInScreen() {
   const [rememberMe, setRememberMe] = React.useState(false);
   const [showPassword, setShowPassword] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
+  const [needsSecondFactor, setNeedsSecondFactor] = React.useState(false);
+  const [secondFactorCode, setSecondFactorCode] = React.useState("");
+  const [pendingSignInAttempt, setPendingSignInAttempt] =
+    React.useState<any>(null);
 
   // Handle the submission of the sign-in form
   const onSignInPress = async () => {
@@ -38,12 +51,52 @@ export default function SignInScreen() {
       if (signInAttempt.status === "complete") {
         await setActive({ session: signInAttempt.createdSessionId });
         router.replace("/");
+      } else if (signInAttempt.status === "needs_second_factor") {
+        setNeedsSecondFactor(true);
+        setPendingSignInAttempt(signInAttempt);
       } else {
-        console.error(JSON.stringify(signInAttempt, null, 2));
+        // Log more useful details if available
+        console.error("Sign-in attempt failed:", {
+          status: signInAttempt.status,
+          error: signInAttempt.error,
+          message: signInAttempt.message,
+        });
       }
     } catch (err: any) {
-      console.error(JSON.stringify(err, null, 2));
+      // Log error details in a more readable way
+      if (err && (err.message || err.code || err.status)) {
+        console.error("Sign-in error:", {
+          message: err.message,
+          code: err.code,
+          status: err.status,
+          name: err.name,
+          stack: err.stack,
+        });
+      } else {
+        console.error("Sign-in error (raw):", err);
+      }
       // You could add an Alert here
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle second factor submission
+  const onSecondFactorPress = async () => {
+    if (!isLoaded || !pendingSignInAttempt) return;
+    setLoading(true);
+    try {
+      const result = await signIn.attemptSecondFactor({
+        code: secondFactorCode,
+      });
+      if (result.status === "complete") {
+        await setActive({ session: result.createdSessionId });
+        router.replace("/");
+      } else {
+        console.error("Second factor attempt failed:", result);
+      }
+    } catch (err: any) {
+      console.error("Second factor error:", err);
     } finally {
       setLoading(false);
     }
@@ -64,104 +117,171 @@ export default function SignInScreen() {
             <Text style={styles.title}>{t("auth.login_tab")}</Text>
 
             <View style={styles.form}>
-              <TextInput
-                label={t("auth.email_label")}
-                autoCapitalize="none"
-                value={emailAddress}
-                placeholder={t("auth.email_placeholder")}
-                onChangeText={setEmailAddress}
-                mode="outlined"
-                keyboardType="email-address"
-                style={styles.input}
-                textColor="#FFFFFF"
-                left={<TextInput.Icon icon="email" />}
-              />
-
-              <View>
-                <TextInput
-                  label={t("auth.password_label")}
-                  value={password}
-                  placeholder={t("auth.password_placeholder")}
-                  secureTextEntry={!showPassword}
-                  onChangeText={setPassword}
-                  mode="outlined"
-                  style={styles.input}
-                  textColor="#FFFFFF"
-                  left={<TextInput.Icon icon="lock" />}
-                  right={
-                    <TextInput.Icon
-                      icon={showPassword ? "eye-off" : "eye"}
-                      onPress={() => setShowPassword(!showPassword)}
-                    />
-                  }
-                />
-              </View>
-
-              <View style={styles.loginOptions}>
-                <View style={styles.checkboxContainer}>
-                  <Checkbox.Android
-                    status={rememberMe ? "checked" : "unchecked"}
-                    onPress={() => setRememberMe(!rememberMe)}
-                  />
-                  <Text
-                    style={styles.checkboxLabel}
-                    onPress={() => setRememberMe(!rememberMe)}
-                  >
-                    {t("auth.remember_me")}
+              {/* If needs second factor, show code input */}
+              {needsSecondFactor ? (
+                <>
+                  <Text style={styles.title}>
+                    {t(
+                      "auth.second_factor_title",
+                      "Ingresa el código de verificación"
+                    )}
                   </Text>
-                </View>
-                <Link href="/reset-password" asChild>
-                  <Button mode="text" compact textColor="#0055D4">
-                    {t("auth.forgot_password")}
+                  <TextInput
+                    label={t(
+                      "auth.verification_code_label",
+                      "Código de verificación"
+                    )}
+                    value={secondFactorCode}
+                    placeholder="123456"
+                    onChangeText={setSecondFactorCode}
+                    mode="outlined"
+                    keyboardType="number-pad"
+                    style={styles.input}
+                    textColor="#FFFFFF"
+                    left={<TextInput.Icon icon="key" />}
+                  />
+                  <Button
+                    mode="contained"
+                    onPress={onSecondFactorPress}
+                    loading={loading}
+                    style={styles.button}
+                  >
+                    {t("auth.verify_button", "Verificar")}
                   </Button>
-                </Link>
-              </View>
-
-              <Button
-                mode="contained"
-                onPress={onSignInPress}
-                loading={loading}
-                disabled={loading || !emailAddress || !password}
-                style={styles.button}
-                testID="sign-in-button"
-              >
-                {t("auth.login_tab")}
-              </Button>
-
-              <View style={styles.divider}>
-                <View style={styles.dividerLine} />
-                <Text style={styles.dividerText}>
-                  {t("auth.or_continue_with")}
-                </Text>
-                <View style={styles.dividerLine} />
-              </View>
-
-              <View style={styles.footer}>
-                <Text style={styles.footerText}>
-                  {t("auth.no_account_question", "¿No tienes una cuenta?")}
-                </Text>
-                <Link href="/sign-up" asChild>
-                  <Button mode="text" compact textColor="#0055D4">
-                    {t("auth.register_tab")}
-                  </Button>
-                </Link>
-              </View>
-
-              <View style={styles.aliadoContainer}>
-                <Text style={styles.aliadoText}>
-                  {t("auth.aliado_question")}
-                </Text>
-                <Link href="/(auth)/(registro-aliado)/registro" asChild>
                   <Button
                     mode="text"
-                    compact
-                    textColor="#FF0000"
-                    labelStyle={{ textDecorationLine: "underline" }}
+                    onPress={() => {
+                      setNeedsSecondFactor(false);
+                      setSecondFactorCode("");
+                      setPendingSignInAttempt(null);
+                    }}
+                    textColor="#FF3333"
                   >
-                    {t("auth.aliado_register_link")}
+                    {t("auth.back_to_login", "Volver")}
                   </Button>
-                </Link>
-              </View>
+                </>
+              ) : (
+                <>
+                  <TextInput
+                    label={t("auth.email_label")}
+                    autoCapitalize="none"
+                    value={emailAddress}
+                    placeholder={t("auth.email_placeholder")}
+                    onChangeText={setEmailAddress}
+                    mode="outlined"
+                    keyboardType="email-address"
+                    style={styles.input}
+                    textColor="#FFFFFF"
+                    left={<TextInput.Icon icon="email" />}
+                  />
+
+                  <View>
+                    <TextInput
+                      label={t("auth.password_label")}
+                      value={password}
+                      placeholder={t("auth.password_placeholder")}
+                      secureTextEntry={!showPassword}
+                      onChangeText={setPassword}
+                      mode="outlined"
+                      style={styles.input}
+                      textColor="#FFFFFF"
+                      left={<TextInput.Icon icon="lock" />}
+                      right={
+                        <TextInput.Icon
+                          icon={showPassword ? "eye-off" : "eye"}
+                          onPress={() => setShowPassword(!showPassword)}
+                        />
+                      }
+                    />
+                  </View>
+
+                  <View style={styles.loginOptions}>
+                    <View style={styles.checkboxContainer}>
+                      <Checkbox.Android
+                        status={rememberMe ? "checked" : "unchecked"}
+                        onPress={() => setRememberMe(!rememberMe)}
+                      />
+                      <Text
+                        style={styles.checkboxLabel}
+                        onPress={() => setRememberMe(!rememberMe)}
+                      >
+                        {t("auth.remember_me")}
+                      </Text>
+                    </View>
+                    <Link href="/reset-password" asChild>
+                      <Button mode="text" compact textColor="#0055D4">
+                        {t("auth.forgot_password")}
+                      </Button>
+                    </Link>
+                  </View>
+
+                  <Button
+                    mode="contained"
+                    onPress={onSignInPress}
+                    loading={loading}
+                    disabled={loading || !emailAddress || !password}
+                    style={styles.button}
+                    testID="sign-in-button"
+                  >
+                    {t("auth.login_tab")}
+                  </Button>
+
+                  <View style={styles.divider}>
+                    <View style={styles.dividerLine} />
+                    <Text style={styles.dividerText}>
+                      {t("auth.or_continue_with")}
+                    </Text>
+                    <View style={styles.dividerLine} />
+                  </View>
+
+                  {/* Google Sign In for native */}
+                  {Platform.OS !== "web" && (
+                    <Button
+                      mode="outlined"
+                      icon="google"
+                      onPress={loginWithGoogle}
+                      loading={authLoading}
+                      style={{ marginVertical: 8 }}
+                    >
+                      {t("auth.google_sign_in", "Iniciar sesión con Google")}
+                    </Button>
+                  )}
+
+                  {/* Google One Tap for web */}
+                  {Platform.OS === "web" && GoogleOneTap && (
+                    <View style={{ marginVertical: 16 }}>
+                      <GoogleOneTap afterSignInUrl="/" afterSignUpUrl="/" />
+                    </View>
+                  )}
+
+                  <View style={styles.footer}>
+                    <Text style={styles.footerText}>
+                      {t("auth.no_account_question", "¿No tienes una cuenta?")}
+                    </Text>
+                    <Link href="/sign-up" asChild>
+                      <Button mode="text" compact textColor="#0055D4">
+                        {t("auth.register_tab")}
+                      </Button>
+                    </Link>
+                  </View>
+
+                  <View style={styles.aliadoContainer}>
+                    <Text style={styles.aliadoText}>
+                      {t("auth.aliado_question")}
+                    </Text>
+                    <Link href="/(auth)/(registro-aliado)/registro" asChild>
+                      <Button
+                        mode="text"
+                        compact
+                        textColor="#FF0000"
+                        labelStyle={{ textDecorationLine: "underline" }}
+                      >
+                        {t("auth.aliado_register_link")}
+                      </Button>
+                    </Link>
+                  </View>
+                </>
+              )}
             </View>
           </View>
         </ScrollView>

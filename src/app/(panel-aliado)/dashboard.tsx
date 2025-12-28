@@ -294,12 +294,7 @@ export default function AliadoDashboardScreen() {
                   color="#F59E0B"
                 />
               )}
-              <GridItem
-                title="Cerrar Sesión"
-                icon="logout"
-                onPress={handleLogout}
-                color="#EF4444"
-              />
+              {/* Only one logout option should be shown. Remove this GridItem if SignOutButton is present below. */}
             </View>
             <View style={{ marginTop: 32, marginBottom: 20 }}>
               <SignOutButton />

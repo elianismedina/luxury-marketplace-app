@@ -1,4 +1,5 @@
 import Logo from "@/components/Logo";
+import { useAuth } from "@/context/AuthContext";
 import { useSignUp } from "@clerk/clerk-expo";
 import { Link, useRouter } from "expo-router";
 import * as React from "react";
@@ -12,8 +13,16 @@ import {
 } from "react-native";
 import { Button, Text, TextInput } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
+// Import GoogleOneTap only on web
+let GoogleOneTap: any = null;
+if (Platform.OS === "web") {
+  try {
+    GoogleOneTap = require("@clerk/clerk-react").GoogleOneTap;
+  } catch {}
+}
 
 export default function SignUpScreen() {
+  const { loginWithGoogle, loading: authLoading } = useAuth();
   const { isLoaded, signUp, setActive } = useSignUp();
   const router = useRouter();
   const { t } = useTranslation();
@@ -152,6 +161,24 @@ export default function SignUpScreen() {
                 >
                   {t("common.continue", "Continuar")}
                 </Button>
+                {/* Google Sign Up for native */}
+                {Platform.OS !== "web" && (
+                  <Button
+                    mode="outlined"
+                    icon="google"
+                    onPress={loginWithGoogle}
+                    loading={authLoading}
+                    style={{ marginVertical: 8 }}
+                  >
+                    {t("auth.google_sign_up", "Registrarse con Google")}
+                  </Button>
+                )}
+                {/* Google One Tap for web */}
+                {Platform.OS === "web" && GoogleOneTap && (
+                  <View style={{ marginVertical: 16 }}>
+                    <GoogleOneTap afterSignInUrl="/" afterSignUpUrl="/" />
+                  </View>
+                )}
                 <View style={styles.footer}>
                   <Text style={styles.footerText}>
                     {t("auth.already_have_account", "¿Ya tienes una cuenta?")}

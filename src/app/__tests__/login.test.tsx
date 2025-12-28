@@ -1,3 +1,4 @@
+import { AuthProvider } from "@/context/AuthContext";
 import { paperDarkTheme } from "@/theme/paperTheme";
 import { theme } from "@/theme/theme";
 import { fireEvent, render, waitFor } from "@testing-library/react-native";
@@ -25,6 +26,23 @@ jest.mock("@clerk/clerk-expo", () => ({
       create: mockCreate,
     },
     setActive: mockSetActive,
+  }),
+  useAuth: () => ({
+    isLoaded: true,
+    userId: "test-user-id",
+    signOut: jest.fn(),
+  }),
+  useUser: () => ({
+    isLoaded: true,
+    user: null,
+  }),
+  useSignUp: () => ({
+    isLoaded: true,
+    signUp: {},
+    setActive: jest.fn(),
+  }),
+  useOAuth: () => ({
+    startOAuthFlow: jest.fn(),
   }),
 }));
 
@@ -66,9 +84,11 @@ const renderWithProviders = (component: React.ReactElement) => {
         insets: { top: 0, left: 0, right: 0, bottom: 0 },
       }}
     >
-      <StyledThemeProvider theme={theme}>
-        <PaperProvider theme={paperDarkTheme}>{component}</PaperProvider>
-      </StyledThemeProvider>
+      <AuthProvider>
+        <StyledThemeProvider theme={theme}>
+          <PaperProvider theme={paperDarkTheme}>{component}</PaperProvider>
+        </StyledThemeProvider>
+      </AuthProvider>
     </SafeAreaProvider>
   );
 };
