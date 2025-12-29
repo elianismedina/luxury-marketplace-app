@@ -114,6 +114,7 @@ export const theme = {
 export type Theme = typeof theme;
 
 // TypeScript declaration for styled-components
+ 
 declare module "styled-components/native" {
   export interface DefaultTheme extends Theme {}
 }

@@ -5,16 +5,17 @@ import {
   ThemeProvider,
 } from "@react-navigation/native";
 import { useFonts } from "expo-font";
-import { Stack , usePathname, useRouter, useSegments } from "expo-router";
+import { Stack, usePathname, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import { useEffect , useState } from "react";
+import { useEffect, useState } from "react";
 import { View } from "react-native";
 import { IconButton, PaperProvider } from "react-native-paper";
 import "react-native-reanimated";
 import { ThemeProvider as StyledThemeProvider } from "styled-components/native";
 
 import { AnimatedSplashScreen } from "@/components/AnimatedSplashScreen";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import { useColorScheme } from "@/components/useColorScheme";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import "@/i18n";
@@ -22,8 +23,6 @@ import { paperDarkTheme } from "@/theme/paperTheme";
 import { theme } from "@/theme/theme";
 import { ClerkLoaded, ClerkProvider } from "@clerk/clerk-expo";
 import { tokenCache } from "@clerk/clerk-expo/token-cache";
-
-
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -67,18 +66,20 @@ export default function RootLayout() {
   }
 
   return (
-    <ClerkProvider tokenCache={tokenCache} publishableKey={publishableKey}>
-      <ClerkLoaded>
-        <StyledThemeProvider theme={theme}>
-          <PaperProvider theme={paperTheme}>
-            <AuthProvider>
-              <RootLayoutNav />
-              <StatusBar style="light" backgroundColor="#121212" />
-            </AuthProvider>
-          </PaperProvider>
-        </StyledThemeProvider>
-      </ClerkLoaded>
-    </ClerkProvider>
+    <ErrorBoundary>
+      <ClerkProvider tokenCache={tokenCache} publishableKey={publishableKey}>
+        <ClerkLoaded>
+          <StyledThemeProvider theme={theme}>
+            <PaperProvider theme={paperTheme}>
+              <AuthProvider>
+                <RootLayoutNav />
+                <StatusBar style="light" backgroundColor="#121212" />
+              </AuthProvider>
+            </PaperProvider>
+          </StyledThemeProvider>
+        </ClerkLoaded>
+      </ClerkProvider>
+    </ErrorBoundary>
   );
 }
 

@@ -15,6 +15,7 @@ let Account: any,
 
 if (isWeb) {
   // Web SDK
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const appwrite = require("appwrite");
   Account = appwrite.Account;
   Avatars = appwrite.Avatars;
@@ -26,6 +27,7 @@ if (isWeb) {
   Teams = appwrite.Teams;
 } else {
   // React Native SDK
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const rnAppwrite = require("react-native-appwrite");
   Account = rnAppwrite.Account;
   Avatars = rnAppwrite.Avatars;
@@ -107,7 +109,7 @@ export async function getLoggedInUser() {
   try {
     const user = await account.get();
     return user;
-  } catch (error) {
+  } catch {
     return null;
   }
 }
