@@ -155,7 +155,7 @@ export default function ResetPasswordScreen() {
 
           <View style={styles.form}>
             <HelperText type="info" visible style={styles.infoBox}>
-              📧 Ve a tu email → Haz clic derecho en el botón "Reset Password" →
+              📧 Ve a tu email → Haz clic derecho en el botón &quot;Reset Password&quot; →
               Copiar enlace → Pega aquí abajo
             </HelperText>
 

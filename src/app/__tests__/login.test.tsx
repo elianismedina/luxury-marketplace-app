@@ -67,13 +67,21 @@ jest.mock("react-i18next", () => ({
 }));
 
 jest.mock("@/components/Logo", () => {
+   
   const { View } = require("react-native");
-  return () => <View testID="mock-logo" />;
+  const MockLogo = () => <View testID="mock-logo" />;
+  MockLogo.displayName = "MockLogo";
+  return MockLogo;
 });
 
 jest.mock("@/components/DynamicSvgIcon", () => {
+   
   const { View } = require("react-native");
-  return (props: any) => <View {...props} testID="mock-svg-icon" />;
+  const MockSvgIcon = (props: any) => (
+    <View {...props} testID="mock-svg-icon" />
+  );
+  MockSvgIcon.displayName = "MockSvgIcon";
+  return MockSvgIcon;
 });
 
 const renderWithProviders = (component: React.ReactElement) => {

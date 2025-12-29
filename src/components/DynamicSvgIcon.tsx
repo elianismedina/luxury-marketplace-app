@@ -3,11 +3,6 @@ import React from "react";
 import { SvgProps } from "react-native-svg";
 import type { DefaultTheme } from "styled-components/native";
 import styled, { useTheme } from "styled-components/native";
-// Centered container for icons
-const CenteredIconContainer = styled.View`
-  justify-content: center;
-  align-items: center;
-`;
 
 // Import all SVGs from the assets/Svg directory
 
@@ -17,6 +12,11 @@ import FrenosIcon from "../../assets/Svg/frenos.svg";
 import LlantaIcon from "../../assets/Svg/llanta.svg";
 import LubricanteIcon from "../../assets/Svg/lubricante.svg";
 import SuspensionIcon from "../../assets/Svg/suspension.svg";
+// Centered container for icons
+const CenteredIconContainer = styled.View`
+  justify-content: center;
+  align-items: center;
+`;
 
 // Spanish label mapping for categories (from constants/categorias.ts)
 const spanishLabels: Record<string, string> = {

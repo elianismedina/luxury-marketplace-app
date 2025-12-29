@@ -1,7 +1,7 @@
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Link, Redirect, Tabs } from "expo-router";
-import React from "react";
+import React, { useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -15,7 +15,7 @@ import { useClientOnlyValue } from "@/components/useClientOnlyValue";
 import { useColorScheme } from "@/components/useColorScheme";
 import { useAuth } from "@/context/AuthContext";
 import { theme } from "@/theme/theme";
-import { useState } from "react";
+
 
 // You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
 function TabBarIcon(props: {
@@ -29,6 +29,8 @@ export default function TabLayout() {
   const colorScheme = useColorScheme();
   const { user, initializing } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  // Move hook call to top level
+  const headerShown = useClientOnlyValue(false, true);
 
   if (initializing) {
     return (
@@ -61,7 +63,7 @@ export default function TabLayout() {
           },
           // Disable the static render of the header on web
           // to prevent a hydration error in React Navigation v6.
-          headerShown: useClientOnlyValue(false, true),
+          headerShown,
         }}
       >
         <Tabs.Screen

@@ -24,6 +24,19 @@ type PasswordFormData = {
 
 export default function CambiarPasswordScreen() {
   const { user, initializing, refresh } = useAuth();
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState<PasswordFormData>({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+  const [errors, setErrors] = useState<Partial<PasswordFormData>>({});
+  const [showPasswords, setShowPasswords] = useState({
+    current: false,
+    new: false,
+    confirm: false,
+  });
   // Forzar refresh si no hay usuario
   useEffect(() => {
     if (!user && !initializing) {
@@ -45,21 +58,6 @@ export default function CambiarPasswordScreen() {
       </SafeAreaView>
     );
   }
-  const router = useRouter();
-  const [loading, setLoading] = useState(false);
-
-  const [formData, setFormData] = useState<PasswordFormData>({
-    currentPassword: "",
-    newPassword: "",
-    confirmPassword: "",
-  });
-
-  const [errors, setErrors] = useState<Partial<PasswordFormData>>({});
-  const [showPasswords, setShowPasswords] = useState({
-    current: false,
-    new: false,
-    confirm: false,
-  });
 
   const validateForm = (): boolean => {
     const newErrors: Partial<PasswordFormData> = {};

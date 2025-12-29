@@ -367,7 +367,7 @@ export default function GarageScreen() {
               No hay vehículos registrados
             </Text>
             <Text variant="bodyMedium" style={styles.emptyText}>
-              Agrega tu primer vehículo desde la pestaña "Añadir"
+              Agrega tu primer vehículo desde la pestaña &quot;Añadir&quot;
             </Text>
           </View>
         }

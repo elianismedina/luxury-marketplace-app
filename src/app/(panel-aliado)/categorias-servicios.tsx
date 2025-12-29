@@ -23,11 +23,11 @@ import {
   ID,
   isAppwriteConfigured,
   Query,
-} from "@/lib/appwrite";
+ categoriesCollectionId } from "@/lib/appwrite";
+
+
 
 const PERFIL_ALIADO_COLLECTION_ID = "perfil_aliado";
-
-import { categoriesCollectionId } from "@/lib/appwrite";
 
 export default function CategoriasServiciosScreen() {
   const { user, initializing, refresh } = useAuth();

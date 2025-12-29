@@ -5,10 +5,10 @@ import {
   ThemeProvider,
 } from "@react-navigation/native";
 import { useFonts } from "expo-font";
-import { Stack } from "expo-router";
+import { Stack , usePathname, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import { useEffect } from "react";
+import { useEffect , useState } from "react";
 import { View } from "react-native";
 import { IconButton, PaperProvider } from "react-native-paper";
 import "react-native-reanimated";
@@ -22,8 +22,8 @@ import { paperDarkTheme } from "@/theme/paperTheme";
 import { theme } from "@/theme/theme";
 import { ClerkLoaded, ClerkProvider } from "@clerk/clerk-expo";
 import { tokenCache } from "@clerk/clerk-expo/token-cache";
-import { usePathname, useRouter, useSegments } from "expo-router";
-import { useState } from "react";
+
+
 
 export {
   // Catch any errors thrown by the Layout component.
