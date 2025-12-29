@@ -15,7 +15,7 @@ import "react-native-reanimated";
 import { ThemeProvider as StyledThemeProvider } from "styled-components/native";
 
 import { AnimatedSplashScreen } from "@/components/AnimatedSplashScreen";
-import ErrorBoundary from "@/components/ErrorBoundary";
+import { ErrorBoundary } from "@/components/error-boundary";
 import { useColorScheme } from "@/components/useColorScheme";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import "@/i18n";

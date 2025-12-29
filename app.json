@@ -5,7 +5,10 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": ["luxurymarketplace", "appwrite-callback-6910079a00217d16d0ed"],
+    "scheme": [
+      "luxurymarketplace",
+      "appwrite-callback-6910079a00217d16d0ed"
+    ],
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "ios": {
@@ -19,7 +22,11 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.elianismedina05.luxurymarketplace"
+      "package": "com.elianismedina05.luxurymarketplace",
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -43,6 +50,12 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "b2ae5560-0f98-4d7a-811b-9b44937e9979"
+      }
     }
   }
 }
