@@ -1,5 +1,5 @@
 import React from "react";
-import { View } from "react-native";
+import { Platform, View } from "react-native";
 import { Button, Text } from "react-native-paper";
 import styled, { DefaultTheme } from "styled-components/native";
 
@@ -26,14 +26,18 @@ export function ErrorBoundary({ children }: React.PropsWithChildren<object>) {
         console.error("ErrorBoundary caught an error:", error);
       }
     };
-    // Listen for unhandled errors
-    const onError = (event: ErrorEvent) => {
-      errorHandler(event.error);
-    };
-    window.addEventListener("error", onError);
-    return () => {
-      window.removeEventListener("error", onError);
-    };
+    // Only attach window error listener on web
+    if (Platform.OS === "web" && typeof window !== "undefined") {
+      const onError = (event: ErrorEvent) => {
+        errorHandler(event.error);
+      };
+      window.addEventListener("error", onError);
+      return () => {
+        window.removeEventListener("error", onError);
+      };
+    }
+    // No-op cleanup for native
+    return () => {};
   }, []);
 
   if (state.hasError) {
