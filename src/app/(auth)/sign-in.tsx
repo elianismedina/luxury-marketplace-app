@@ -36,18 +36,22 @@ export default function SignInScreen() {
   const [secondFactorCode, setSecondFactorCode] = React.useState("");
   const [pendingSignInAttempt, setPendingSignInAttempt] =
     React.useState<any>(null);
+  // Passwordless (email code) state
+  const [passwordlessMode, setPasswordlessMode] = React.useState(false);
+  const [codeSent, setCodeSent] = React.useState(false);
+  const [emailCode, setEmailCode] = React.useState("");
+  const [pendingPasswordlessAttempt, setPendingPasswordlessAttempt] =
+    React.useState<any>(null);
 
-  // Handle the submission of the sign-in form
+  // Handle the submission of the sign-in form (password-based)
   const onSignInPress = async () => {
     if (!isLoaded) return;
     setLoading(true);
-
     try {
       const signInAttempt = await signIn.create({
         identifier: emailAddress,
         password,
       });
-
       if (signInAttempt.status === "complete") {
         await setActive({ session: signInAttempt.createdSessionId });
         router.replace("/");
@@ -55,15 +59,13 @@ export default function SignInScreen() {
         setNeedsSecondFactor(true);
         setPendingSignInAttempt(signInAttempt);
       } else {
-        // Log more useful details if available
+        // Clerk's SignInResource does not have 'error' or 'message' properties
         console.error("Sign-in attempt failed:", {
           status: signInAttempt.status,
-          error: signInAttempt.error,
-          message: signInAttempt.message,
+          data: signInAttempt,
         });
       }
     } catch (err: any) {
-      // Log error details in a more readable way
       if (err && (err.message || err.code || err.status)) {
         console.error("Sign-in error:", {
           message: err.message,
@@ -75,7 +77,53 @@ export default function SignInScreen() {
       } else {
         console.error("Sign-in error (raw):", err);
       }
-      // You could add an Alert here
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle passwordless (email code) sign-in request
+  const onSendCodePress = async () => {
+    if (!isLoaded) return;
+    setLoading(true);
+    try {
+      const attempt = await signIn.create({
+        identifier: emailAddress,
+        strategy: "email_code",
+      });
+      if (
+        attempt.status === "needs_first_factor" &&
+        attempt.supportedFirstFactors?.some((f) => f.strategy === "email_code")
+      ) {
+        setCodeSent(true);
+        setPendingPasswordlessAttempt(attempt);
+      } else {
+        console.error("Unexpected status for email_code:", attempt);
+      }
+    } catch (err: any) {
+      console.error("Passwordless sign-in error:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle passwordless (email code) code submission
+  const onVerifyCodePress = async () => {
+    if (!isLoaded || !pendingPasswordlessAttempt) return;
+    setLoading(true);
+    try {
+      const result = await pendingPasswordlessAttempt.attemptFirstFactor({
+        strategy: "email_code",
+        code: emailCode,
+      });
+      if (result.status === "complete") {
+        await setActive({ session: result.createdSessionId });
+        router.replace("/");
+      } else {
+        console.error("Email code verification failed:", result);
+      }
+    } catch (err: any) {
+      console.error("Email code verification error:", err);
     } finally {
       setLoading(false);
     }
@@ -87,6 +135,7 @@ export default function SignInScreen() {
     setLoading(true);
     try {
       const result = await signIn.attemptSecondFactor({
+        strategy: "email_code",
         code: secondFactorCode,
       });
       if (result.status === "complete") {
@@ -118,7 +167,88 @@ export default function SignInScreen() {
 
             <View style={styles.form}>
               {/* If needs second factor, show code input */}
-              {needsSecondFactor ? (
+              {/* Passwordless (email code) flow */}
+              {passwordlessMode ? (
+                codeSent ? (
+                  <>
+                    <Text style={styles.title}>
+                      {t(
+                        "auth.verification_code_label",
+                        "Código de verificación"
+                      )}
+                    </Text>
+                    <TextInput
+                      label={t(
+                        "auth.verification_code_label",
+                        "Código de verificación"
+                      )}
+                      value={emailCode}
+                      placeholder="123456"
+                      onChangeText={setEmailCode}
+                      mode="outlined"
+                      keyboardType="number-pad"
+                      style={styles.input}
+                      textColor="#FFFFFF"
+                      left={<TextInput.Icon icon="key" />}
+                    />
+                    <Button
+                      mode="contained"
+                      onPress={onVerifyCodePress}
+                      loading={loading}
+                      style={styles.button}
+                    >
+                      {t("auth.verify_button", "Verificar")}
+                    </Button>
+                    <Button
+                      mode="text"
+                      onPress={() => {
+                        setCodeSent(false);
+                        setEmailCode("");
+                        setPendingPasswordlessAttempt(null);
+                      }}
+                      textColor="#FF3333"
+                    >
+                      {t("auth.back_to_login", "Volver")}
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <TextInput
+                      label={t("auth.email_label")}
+                      autoCapitalize="none"
+                      value={emailAddress}
+                      placeholder={t("auth.email_placeholder")}
+                      onChangeText={setEmailAddress}
+                      mode="outlined"
+                      keyboardType="email-address"
+                      style={styles.input}
+                      textColor="#FFFFFF"
+                      left={<TextInput.Icon icon="email" />}
+                    />
+                    <Button
+                      mode="contained"
+                      onPress={onSendCodePress}
+                      loading={loading}
+                      disabled={loading || !emailAddress}
+                      style={styles.button}
+                    >
+                      {t("auth.send_code", "Enviar código")}
+                    </Button>
+                    <Button
+                      mode="text"
+                      onPress={() => {
+                        setPasswordlessMode(false);
+                        setCodeSent(false);
+                        setEmailCode("");
+                        setPendingPasswordlessAttempt(null);
+                      }}
+                      textColor="#FF3333"
+                    >
+                      {t("auth.back_to_login", "Volver")}
+                    </Button>
+                  </>
+                )
+              ) : needsSecondFactor ? (
                 <>
                   <Text style={styles.title}>
                     {t(
@@ -224,6 +354,20 @@ export default function SignInScreen() {
                     testID="sign-in-button"
                   >
                     {t("auth.login_tab")}
+                  </Button>
+
+                  <Button
+                    mode="text"
+                    onPress={() => {
+                      setPasswordlessMode(true);
+                      setCodeSent(false);
+                      setEmailCode("");
+                      setPendingPasswordlessAttempt(null);
+                    }}
+                    textColor="#0055D4"
+                    style={{ marginTop: 4 }}
+                  >
+                    {t("auth.use_passwordless", "Usar acceso sin contraseña")}
                   </Button>
 
                   <View style={styles.divider}>
