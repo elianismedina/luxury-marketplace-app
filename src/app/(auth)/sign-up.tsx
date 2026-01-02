@@ -1,3 +1,4 @@
+import GoogleSvgIcon from "@/components/GoogleSvgIcon";
 import Logo from "@/components/Logo";
 import { useAuth } from "@/context/AuthContext";
 import { useSignUp } from "@clerk/clerk-expo";
@@ -165,7 +166,7 @@ export default function SignUpScreen() {
                 {Platform.OS !== "web" && (
                   <Button
                     mode="outlined"
-                    icon="google"
+                    icon={() => <GoogleSvgIcon width={24} height={24} />}
                     onPress={loginWithGoogle}
                     loading={authLoading}
                     style={{ marginVertical: 8 }}

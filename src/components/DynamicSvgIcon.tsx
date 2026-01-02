@@ -9,6 +9,7 @@ import styled, { useTheme } from "styled-components/native";
 import BateriaIcon from "../../assets/Svg/bateria.svg";
 import FiltrosIcon from "../../assets/Svg/filtros.svg";
 import FrenosIcon from "../../assets/Svg/frenos.svg";
+import GoogleIcon from "../../assets/Svg/icons8-google.svg";
 import LlantaIcon from "../../assets/Svg/llanta.svg";
 import LubricanteIcon from "../../assets/Svg/lubricante.svg";
 import SuspensionIcon from "../../assets/Svg/suspension.svg";
@@ -66,6 +67,7 @@ const svgIconMap: { [key: string]: React.FC<SvgProps> } = {
   "frenos.svg": FrenosIcon,
   "filtros.svg": FiltrosIcon,
   "suspension.svg": SuspensionIcon,
+  "icons8-google.svg": GoogleIcon,
 };
 
 const vectorIconMap: {
