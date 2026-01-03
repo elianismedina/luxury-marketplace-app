@@ -25,6 +25,8 @@
       "package": "com.elianismedina05.luxurymarketplace",
       "permissions": [
         "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS"
       ]
     },
@@ -57,6 +59,12 @@
       "eas": {
         "projectId": "b2ae5560-0f98-4d7a-811b-9b44937e9979"
       }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/b2ae5560-0f98-4d7a-811b-9b44937e9979"
     }
   }
 }

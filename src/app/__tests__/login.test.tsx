@@ -75,13 +75,22 @@ jest.mock("@/components/Logo", () => {
 });
 
 jest.mock("@/components/DynamicSvgIcon", () => {
-   
+    
   const { View } = require("react-native");
   const MockSvgIcon = (props: any) => (
     <View {...props} testID="mock-svg-icon" />
   );
   MockSvgIcon.displayName = "MockSvgIcon";
   return MockSvgIcon;
+});
+
+jest.mock("@/components/GoogleSvgIcon", () => {
+  const { View } = require("react-native");
+  const MockGoogleSvgIcon = (props: any) => (
+    <View {...props} testID="mock-google-svg-icon" />
+  );
+  MockGoogleSvgIcon.displayName = "MockGoogleSvgIcon";
+  return MockGoogleSvgIcon;
 });
 
 const renderWithProviders = (component: React.ReactElement) => {
