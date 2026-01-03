@@ -10,6 +10,8 @@
     "expo-asset": "~12.0.12",
     "expo-audio": "~1.1.1",
     "expo-auth-session": "~7.0.10",
+    "expo-battery": "~10.0.8",
+    "expo-brightness": "~14.0.8",
     "expo-constants": "~18.0.12",
     "expo-crypto": "~15.0.8",
     "expo-dev-client": "~6.0.20",
@@ -57,7 +59,7 @@
     "react-test-renderer": "^19.1.0",
     "typescript": "~5.9.2"
   },
-  "main": "expo-router/entry",
+  "main": "src/index.ts",
   "name": "luxury-marketplace",
   "private": true,
   "scripts": {

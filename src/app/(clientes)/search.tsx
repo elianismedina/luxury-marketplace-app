@@ -1,308 +1,383 @@
-import * as ImagePicker from "expo-image-picker";
-import { useState } from "react";
+import React, { useState } from "react";
 import {
-  Alert,
-  Image,
-  KeyboardAvoidingView,
-  Platform,
+  View,
+  Text,
   StyleSheet,
   TouchableOpacity,
-  View,
+  Keyboard,
+  TouchableWithoutFeedback,
+  Platform,
+  TextInput,
 } from "react-native";
-import { IconButton, Text, TextInput } from "react-native-paper";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useTheme } from "styled-components/native";
 
-type Message = {
-  role: "user" | "assistant";
-  content: string;
-  imageUri?: string;
-};
+import { ElevenLabsProvider, useConversation } from "@elevenlabs/react-native";
+import type { ConversationStatus } from "@elevenlabs/react-native";
+import { getBatteryLevel, changeBrightness, flashScreen } from "./utils/tools";
 
-export default function SearchScreen() {
-  const theme = useTheme();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+const ConversationScreen = () => {
+  const conversation = useConversation({
+    clientTools: {
+      getBatteryLevel,
+      changeBrightness,
+      flashScreen,
+    },
+    onConnect: ({ conversationId }: { conversationId: string }) => {
+      console.log("✅ Connected to conversation", conversationId);
+    },
+    onDisconnect: (details: any) => {
+      console.log("❌ Disconnected from conversation", details);
+    },
+    onError: (message: string, context?: Record<string, unknown>) => {
+      console.error("❌ Conversation error:", message, context);
+    },
+    onMessage: (payload: any) => {
+      const { message, source } = payload;
+      console.log(`💬 Message from ${source}:`, message);
+    },
+    onModeChange: ({ mode }: { mode: "speaking" | "listening" }) => {
+      console.log(`🔊 Mode: ${mode}`);
+    },
+    onStatusChange: ({ status }: { status: ConversationStatus }) => {
+      console.log(`📡 Status: ${status}`);
+    },
+    onCanSendFeedbackChange: ({
+      canSendFeedback,
+    }: {
+      canSendFeedback: boolean;
+    }) => {
+      console.log(`🔊 Can send feedback: ${canSendFeedback}`);
+    },
+  });
 
-  const pickImage = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== "granted") {
-      Alert.alert(
-        "Permisos necesarios",
-        "Necesitamos acceso a tus fotos para adjuntar imágenes."
-      );
-      return;
-    }
+  const [isStarting, setIsStarting] = useState(false);
+  const [textInput, setTextInput] = useState("");
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
-      allowsEditing: true,
-      quality: 0.8,
-    });
-
-    if (!result.canceled && result.assets[0]) {
-      setSelectedImage(result.assets[0].uri);
+  const handleSubmitText = () => {
+    if (textInput.trim()) {
+      conversation.sendUserMessage(textInput.trim());
+      setTextInput("");
+      Keyboard.dismiss();
     }
   };
 
-  const removeImage = () => {
-    setSelectedImage(null);
-  };
+  const startConversation = async () => {
+    if (isStarting) return;
 
-  const handleSearch = () => {
-    if (!searchQuery.trim() && !selectedImage) return;
-
-    // Agregar mensaje del usuario
-    const newMessages: Message[] = [
-      ...messages,
-      {
-        role: "user" as const,
-        content: searchQuery || "Imagen adjunta",
-        imageUri: selectedImage || undefined,
-      },
-    ];
-    setMessages(newMessages);
-    setSearchQuery("");
-    setSelectedImage(null);
-
-    // TODO: Aquí se integrará la búsqueda real de productos/servicios
-    // Por ahora, respuesta simulada
-    setTimeout(() => {
-      setMessages([
-        ...newMessages,
-        {
-          role: "assistant" as const,
-          content:
-            "Estoy buscando en nuestro catálogo... (funcionalidad en desarrollo)",
+    setIsStarting(true);
+    try {
+      await conversation.startSession({
+        agentId: process.env.EXPO_PUBLIC_AGENT_ID,
+        dynamicVariables: {
+          platform: Platform.OS,
         },
-      ]);
-    }, 500);
+      });
+    } catch (error) {
+      console.error("Failed to start conversation:", error);
+    } finally {
+      setIsStarting(false);
+    }
   };
+
+  const endConversation = async () => {
+    try {
+      await conversation.endSession();
+    } catch (error) {
+      console.error("Failed to end conversation:", error);
+    }
+  };
+
+  const getStatusColor = (status: ConversationStatus): string => {
+    switch (status) {
+      case "connected":
+        return "#10B981";
+      case "connecting":
+        return "#F59E0B";
+      case "disconnected":
+        return "#EF4444";
+      default:
+        return "#6B7280";
+    }
+  };
+
+  const getStatusText = (status: ConversationStatus): string => {
+    return status[0].toUpperCase() + status.slice(1);
+  };
+
+  const canStart = conversation.status === "disconnected" && !isStarting;
+  const canEnd = conversation.status === "connected";
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={["top"]}>
-      <KeyboardAvoidingView
-        style={styles.container}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={100}
-      >
-        <View style={styles.content}>
-          {messages.length === 0 ? (
-            <>
-              <Image
-                source={require("../../../assets/images/searchScreenImage.webp")}
-                style={styles.heroImage}
-                resizeMode="cover"
-              />
-              <View style={styles.emptyState}>
-                <Text variant="headlineMedium" style={styles.emptyTitle}>
-                  ¿Qué estás buscando?
-                </Text>
-                <Text variant="bodyLarge" style={styles.emptySubtitle}>
-                  Pregunta por repuestos, servicios o accesorios para tu
-                  vehículo
-                </Text>
-              </View>
-            </>
-          ) : (
-            <View style={styles.messagesContainer}>
-              {messages.map((message, index) => (
-                <View
-                  key={index}
-                  style={[
-                    styles.messageBubble,
-                    message.role === "user"
-                      ? styles.userBubble
-                      : styles.assistantBubble,
-                  ]}
-                >
-                  {message.imageUri && (
-                    <Image
-                      source={{ uri: message.imageUri }}
-                      style={styles.messageImage}
-                      resizeMode="cover"
-                    />
-                  )}
-                  <Text
-                    style={
-                      message.role === "user"
-                        ? styles.userText
-                        : styles.assistantText
-                    }
-                  >
-                    {message.content}
-                  </Text>
-                </View>
-              ))}
-            </View>
-          )}
+    <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
+      <View style={styles.container}>
+        <Text style={styles.title}>ElevenLabs React Native Example</Text>
+        <Text style={styles.subtitle}>
+          Remember to set the agentId in the .env file!
+        </Text>
+
+        <View style={styles.statusContainer}>
+          <View
+            style={[
+              styles.statusDot,
+              { backgroundColor: getStatusColor(conversation.status) },
+            ]}
+          />
+          <Text style={styles.statusText}>
+            {getStatusText(conversation.status)}
+          </Text>
         </View>
 
-        <View style={styles.inputContainer}>
-          {selectedImage && (
-            <View style={styles.imagePreviewContainer}>
-              <Image
-                source={{ uri: selectedImage }}
-                style={styles.imagePreview}
-                resizeMode="cover"
-              />
-              <TouchableOpacity
-                style={styles.removeImageButton}
-                onPress={removeImage}
-              >
-                <IconButton icon="close" size={16} iconColor="#fff" />
-              </TouchableOpacity>
+        {conversation.status === "connected" && (
+          <View style={styles.speakingContainer}>
+            <View
+              style={[
+                styles.speakingDot,
+                {
+                  backgroundColor: conversation.isSpeaking
+                    ? "#8B5CF6"
+                    : "#D1D5DB",
+                },
+              ]}
+            />
+            <Text
+              style={[
+                styles.speakingText,
+                { color: conversation.isSpeaking ? "#8B5CF6" : "#9CA3AF" },
+              ]}
+            >
+              {conversation.isSpeaking ? "🎤 AI Speaking" : "👂 AI Listening"}
+            </Text>
+          </View>
+        )}
+
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity
+            style={[
+              styles.button,
+              styles.startButton,
+              !canStart && styles.disabledButton,
+            ]}
+            onPress={startConversation}
+            disabled={!canStart}
+          >
+            <Text style={styles.buttonText}>
+              {isStarting ? "Starting..." : "Start Conversation"}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.button,
+              styles.endButton,
+              !canEnd && styles.disabledButton,
+            ]}
+            onPress={endConversation}
+            disabled={!canEnd}
+          >
+            <Text style={styles.buttonText}>End Conversation</Text>
+          </TouchableOpacity>
+        </View>
+
+        {conversation.status === "connected" &&
+          conversation.canSendFeedback && (
+            <View style={styles.feedbackContainer}>
+              <Text style={styles.feedbackLabel}>How was that response?</Text>
+              <View style={styles.feedbackButtons}>
+                <TouchableOpacity
+                  style={[styles.button, styles.likeButton]}
+                  onPress={() => conversation.sendFeedback(true)}
+                >
+                  <Text style={styles.buttonText}>👍 Like</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.button, styles.dislikeButton]}
+                  onPress={() => conversation.sendFeedback(false)}
+                >
+                  <Text style={styles.buttonText}>👎 Dislike</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           )}
-          <View style={styles.inputRow}>
-            <IconButton
-              icon="plus"
-              size={24}
-              onPress={pickImage}
-              style={styles.attachButton}
-              iconColor={theme.colors.primary}
-            />
+
+        {conversation.status === "connected" && (
+          <View style={styles.messagingContainer}>
+            <Text style={styles.messagingLabel}>Send Text Message</Text>
             <TextInput
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              placeholder="Escribe tu búsqueda..."
-              mode="outlined"
-              style={styles.input}
+              style={styles.textInput}
+              value={textInput}
+              onChangeText={(text: string) => {
+                setTextInput(text);
+                if (text.length > 0) {
+                  conversation.sendUserActivity();
+                }
+              }}
+              placeholder="Type your message or context... (Press Enter to send)"
               multiline
-              maxLength={500}
-              onSubmitEditing={handleSearch}
-              outlineColor={theme.colors.border}
-              activeOutlineColor={theme.colors.primary}
-              right={
-                <TextInput.Icon
-                  icon="send"
-                  onPress={handleSearch}
-                  disabled={!searchQuery.trim() && !selectedImage}
-                  forceTextInputFocus={false}
-                  color={
-                    searchQuery.trim() || selectedImage
-                      ? theme.colors.primary
-                      : theme.colors.textDisabled
-                  }
-                />
-              }
+              onSubmitEditing={handleSubmitText}
+              returnKeyType="send"
+              blurOnSubmit={true}
             />
+            <View style={styles.messageButtons}>
+              <TouchableOpacity
+                style={[styles.button, styles.messageButton]}
+                onPress={handleSubmitText}
+                disabled={!textInput.trim()}
+              >
+                <Text style={styles.buttonText}>💬 Send Message</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.button, styles.contextButton]}
+                onPress={() => {
+                  if (textInput.trim()) {
+                    conversation.sendContextualUpdate(textInput.trim());
+                    setTextInput("");
+                    Keyboard.dismiss();
+                  }
+                }}
+                disabled={!textInput.trim()}
+              >
+                <Text style={styles.buttonText}>📝 Send Context</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+        )}
+      </View>
+    </TouchableWithoutFeedback>
+  );
+};
+
+export default function App() {
+  return (
+    <ElevenLabsProvider>
+      <ConversationScreen />
+    </ElevenLabsProvider>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: "#121212",
-  },
   container: {
     flex: 1,
-  },
-  content: {
-    flex: 1,
-  },
-  emptyState: {
-    alignItems: "center",
-    paddingHorizontal: 32,
-    paddingVertical: 32,
-  },
-  heroImage: {
-    width: "100%",
-    height: 180,
-    marginBottom: 24,
-    opacity: 0.85,
-  },
-  emptyTitle: {
-    fontWeight: "700",
-    textAlign: "center",
-    marginBottom: 12,
-    color: "#0055D4",
-  },
-  emptySubtitle: {
-    textAlign: "center",
-    color: "#6b7280",
-    marginBottom: 32,
-  },
-  messagesContainer: {
-    flex: 1,
-    padding: 16,
-    gap: 12,
-  },
-  messageBubble: {
-    maxWidth: "80%",
-    padding: 12,
-    borderRadius: 16,
-  },
-  userBubble: {
-    alignSelf: "flex-end",
-    backgroundColor: "#FF0000",
-  },
-  assistantBubble: {
-    alignSelf: "flex-start",
-    backgroundColor: "#2A2A2A",
-    borderWidth: 1,
-    borderColor: "#4A4A4A",
-  },
-  userText: {
-    color: "#fff",
-    fontSize: 16,
-  },
-  assistantText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-  },
-  inputContainer: {
-    padding: 16,
-    backgroundColor: "#1E1E1E",
-    borderTopWidth: 1,
-    borderTopColor: "#4A4A4A",
-    gap: 12,
-  },
-  inputRow: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    gap: 8,
-  },
-  attachButton: {
-    margin: 0,
-    backgroundColor: "#2A2A2A",
-  },
-  input: {
-    flex: 1,
-    backgroundColor: "#2A2A2A",
-    maxHeight: 120,
-  },
-  imagePreviewContainer: {
-    position: "relative",
-    width: 100,
-    height: 100,
-    borderRadius: 8,
-    overflow: "hidden",
-  },
-  imagePreview: {
-    width: "100%",
-    height: "100%",
-  },
-  removeImageButton: {
-    position: "absolute",
-    top: 4,
-    right: 4,
-    backgroundColor: "rgba(0, 0, 0, 0.6)",
-    borderRadius: 12,
-    width: 24,
-    height: 24,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: "#F3F4F6",
+    padding: 20,
   },
-  messageImage: {
-    width: "100%",
-    height: 200,
-    borderRadius: 8,
+  title: {
+    fontSize: 24,
+    fontWeight: "bold",
     marginBottom: 8,
+    color: "#1F2937",
+  },
+  subtitle: {
+    fontSize: 16,
+    color: "#6B7280",
+    marginBottom: 32,
+  },
+  statusContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 24,
+  },
+  statusDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    marginRight: 8,
+  },
+  statusText: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: "#374151",
+  },
+  speakingContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 24,
+  },
+  speakingDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    marginRight: 8,
+  },
+  speakingText: {
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  buttonContainer: {
+    width: "100%",
+    gap: 16,
+  },
+  button: {
+    backgroundColor: "#3B82F6",
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  startButton: {
+    backgroundColor: "#10B981",
+  },
+  endButton: {
+    backgroundColor: "#EF4444",
+  },
+  disabledButton: {
+    backgroundColor: "#9CA3AF",
+  },
+  buttonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  feedbackContainer: {
+    marginTop: 24,
+    alignItems: "center",
+  },
+  feedbackLabel: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: "#374151",
+    marginBottom: 12,
+  },
+  feedbackButtons: {
+    flexDirection: "row",
+    gap: 16,
+  },
+  likeButton: {
+    backgroundColor: "#10B981",
+  },
+  dislikeButton: {
+    backgroundColor: "#EF4444",
+  },
+  messagingContainer: {
+    marginTop: 24,
+    width: "100%",
+  },
+  messagingLabel: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: "#374151",
+    marginBottom: 8,
+  },
+  textInput: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 8,
+    padding: 16,
+    minHeight: 100,
+    textAlignVertical: "top",
+    borderWidth: 1,
+    borderColor: "#D1D5DB",
+    marginBottom: 16,
+  },
+  messageButtons: {
+    flexDirection: "row",
+    gap: 16,
+  },
+  messageButton: {
+    backgroundColor: "#3B82F6",
+    flex: 1,
+  },
+  contextButton: {
+    backgroundColor: "#4F46E5",
+    flex: 1,
   },
 });

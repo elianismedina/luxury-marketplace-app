@@ -1,0 +1,8 @@
+{
+  "agents": [
+    {
+      "config": "agent_configs\\Zona-Pits-Agent.json",
+      "id": "agent_7101ke2mw72peg3b89mwtsvqyyb1"
+    }
+  ]
+}
