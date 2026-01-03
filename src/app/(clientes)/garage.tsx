@@ -232,16 +232,22 @@ export default function GarageScreen() {
 
   // Exponer funciones globalmente para que el navbar pueda acceder
   useEffect(() => {
-    (global as any).handleDeleteVehiculos = handleDelete;
-    (global as any).handleEditVehiculo = handleEdit;
-    (global as any).selectionMode = selectionMode;
-
+    // Solo exponer los handlers si hay vehículos registrados
+    if (vehiculos.length > 0) {
+      (global as any).handleDeleteVehiculos = handleDelete;
+      (global as any).handleEditVehiculo = handleEdit;
+      (global as any).selectionMode = selectionMode;
+    } else {
+      delete (global as any).handleDeleteVehiculos;
+      delete (global as any).handleEditVehiculo;
+      delete (global as any).selectionMode;
+    }
     return () => {
       delete (global as any).handleDeleteVehiculos;
       delete (global as any).handleEditVehiculo;
       delete (global as any).selectionMode;
     };
-  }, [handleDelete, handleEdit, selectionMode]);
+  }, [handleDelete, handleEdit, selectionMode, vehiculos.length]);
 
   const renderVehiculo = ({ item }: { item: Vehiculo }) => {
     const imageUrl = getImageUrl(item.imageId);

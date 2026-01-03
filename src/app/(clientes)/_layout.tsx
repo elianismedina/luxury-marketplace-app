@@ -16,7 +16,6 @@ import { useColorScheme } from "@/components/useColorScheme";
 import { useAuth } from "@/context/AuthContext";
 import { theme } from "@/theme/theme";
 
-
 // You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
 function TabBarIcon(props: {
   name: React.ComponentProps<typeof FontAwesome>["name"];
@@ -110,49 +109,56 @@ export default function TabLayout() {
             tabBarIcon: ({ color }) => (
               <Ionicons name="car-sport-outline" size={28} color={color} />
             ),
-            headerRight: () => (
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  marginRight: 15,
-                }}
-              >
-                <Pressable
-                  onPress={() => {
-                    if ((global as any).handleEditVehiculo) {
-                      (global as any).handleEditVehiculo();
-                    }
-                  }}
-                  style={{ marginRight: 20 }}
-                >
-                  {({ pressed }) => (
-                    <FontAwesome
-                      name="edit"
-                      size={26}
-                      color="#FFFFFF"
-                      style={{ opacity: pressed ? 0.5 : 1 }}
-                    />
-                  )}
-                </Pressable>
-                <Pressable
-                  onPress={() => {
-                    if ((global as any).handleDeleteVehiculos) {
-                      (global as any).handleDeleteVehiculos();
-                    }
+            headerRight: () => {
+              // Solo mostrar los iconos si hay vehículos registrados
+              const hasVehiculos =
+                (global as any).handleEditVehiculo &&
+                (global as any).handleDeleteVehiculos;
+              if (!hasVehiculos) return null;
+              return (
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    marginRight: 15,
                   }}
                 >
-                  {({ pressed }) => (
-                    <FontAwesome
-                      name="trash"
-                      size={26}
-                      color="#FFFFFF"
-                      style={{ opacity: pressed ? 0.5 : 1 }}
-                    />
-                  )}
-                </Pressable>
-              </View>
-            ),
+                  <Pressable
+                    onPress={() => {
+                      if ((global as any).handleEditVehiculo) {
+                        (global as any).handleEditVehiculo();
+                      }
+                    }}
+                    style={{ marginRight: 20 }}
+                  >
+                    {({ pressed }) => (
+                      <FontAwesome
+                        name="edit"
+                        size={26}
+                        color="#FFFFFF"
+                        style={{ opacity: pressed ? 0.5 : 1 }}
+                      />
+                    )}
+                  </Pressable>
+                  <Pressable
+                    onPress={() => {
+                      if ((global as any).handleDeleteVehiculos) {
+                        (global as any).handleDeleteVehiculos();
+                      }
+                    }}
+                  >
+                    {({ pressed }) => (
+                      <FontAwesome
+                        name="trash"
+                        size={26}
+                        color="#FFFFFF"
+                        style={{ opacity: pressed ? 0.5 : 1 }}
+                      />
+                    )}
+                  </Pressable>
+                </View>
+              );
+            },
           }}
         />
         <Tabs.Screen
