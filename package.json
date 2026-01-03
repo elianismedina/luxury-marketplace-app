@@ -5,6 +5,7 @@
     "@expo/vector-icons": "^15.0.3",
     "@livekit/react-native": "^2.9.6",
     "@livekit/react-native-expo-plugin": "^1.0.1",
+    "@livekit/react-native-webrtc": "^137.0.2",
     "@lottiefiles/dotlottie-react": "^0.13.5",
     "@react-native-community/datetimepicker": "8.4.4",
     "@react-navigation/native": "^7.1.8",
@@ -77,5 +78,18 @@
   "version": "1.0.0",
   "overrides": {
     "expo-file-system": "19.0.21"
+  },
+  "expo": {
+    "doctor": {
+      "reactNativeDirectoryCheck": {
+        "exclude": [
+          "@livekit/react-native",
+          "react-native-webrtc",
+          "@livekit/react-native-expo-plugin",
+          "@solana-mobile/mobile-wallet-adapter-protocol"
+        ],
+        "listUnknownPackages": false
+      }
+    }
   }
 }

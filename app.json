@@ -5,10 +5,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": [
-      "luxurymarketplace",
-      "appwrite-callback-6910079a00217d16d0ed"
-    ],
+    "scheme": ["luxurymarketplace", "appwrite-callback-6910079a00217d16d0ed"],
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "ios": {
@@ -50,9 +47,7 @@
       "expo-localization",
       "expo-secure-store",
       "expo-asset",
-      "@config-plugins/react-native-webrtc",
-      "@livekit/react-native-expo-plugin",
-      "@livekit/react-native-expo-plugin"
+      "@config-plugins/react-native-webrtc"
     ],
     "experiments": {
       "typedRoutes": true
