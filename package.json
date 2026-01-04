@@ -2,6 +2,7 @@
   "dependencies": {
     "@clerk/clerk-expo": "^2.19.14",
     "@config-plugins/react-native-webrtc": "^13.0.0",
+    "@elevenlabs/react-native": "^0.5.7",
     "@expo/vector-icons": "^15.0.3",
     "@livekit/react-native": "^2.9.6",
     "@livekit/react-native-expo-plugin": "^1.0.1",
@@ -31,6 +32,7 @@
     "expo-updates": "~29.0.15",
     "expo-web-browser": "~15.0.10",
     "i18next": "^25.7.3",
+    "livekit-client": "^2.16.1",
     "lottie-react-native": "~7.3.1",
     "react": "19.1.0",
     "react-dom": "19.1.0",

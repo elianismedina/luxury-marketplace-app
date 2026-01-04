@@ -299,7 +299,7 @@ export default function EditVehicleScreen() {
       setSnackbarVisible(true);
 
       setTimeout(() => {
-        router.push("/(clientes)/four");
+        router.push("/(clientes)");
       }, 1500);
     } catch (error: any) {
       console.error("Error al actualizar vehículo:", error);

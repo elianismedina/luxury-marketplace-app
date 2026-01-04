@@ -102,7 +102,7 @@ export const BodyText = styled.Text<{ color?: string; align?: string }>`
   font-size: ${({ theme }: { theme: DefaultTheme }) => theme.fontSize.md}px;
   line-height: ${({ theme }: { theme: DefaultTheme }) =>
     theme.fontSize.md * 1.5}px;
-  ${({ align }) => (align ? `text-align: ${align};` : "")}
+  ${({ align }: { align?: string }) => (align ? `text-align: ${align};` : "")}
 `;
 
 export const Caption = styled.Text<{ color?: string }>`
@@ -185,7 +185,13 @@ export const OutlineButton = styled.TouchableOpacity<{ disabled?: boolean }>`
 export const ButtonText = styled.Text<{
   variant?: "primary" | "secondary" | "outline";
 }>`
-  color: ${({ theme, variant = "primary" }) => {
+  color: ${({
+    theme,
+    variant = "primary",
+  }: {
+    theme: DefaultTheme;
+    variant?: "primary" | "secondary" | "outline";
+  }) => {
     if (variant === "outline") return theme.colors.primary;
     if (variant === "secondary") return theme.colors.textOnSecondary;
     return theme.colors.textOnPrimary;
@@ -233,11 +239,18 @@ export const Row = styled.View<{
   gap?: number;
 }>`
   flex-direction: row;
-  ${({ justify }) => (justify ? `justify-content: ${justify};` : "")}
-  ${({ align }) => (align ? `align-items: ${align};` : "")}
-  ${({ gap, theme }) =>
-    gap
-      ? `gap: ${theme.spacing[gap as keyof typeof theme.spacing] || gap}px;`
+  ${(props: any) => (props.justify ? `justify-content: ${props.justify};` : "")}
+  ${(props: any) => (props.align ? `align-items: ${props.align};` : "")}
+      ${(props: any) =>
+    typeof props.gap !== "undefined" &&
+    props.theme &&
+    props.theme.spacing &&
+    props.gap in props.theme.spacing
+      ? `gap: ${
+          props.theme.spacing[props.gap as keyof typeof props.theme.spacing]
+        }px;`
+      : props.gap
+      ? `gap: ${props.gap}px;`
       : ""}
 `;
 
@@ -247,16 +260,23 @@ export const Column = styled.View<{
   gap?: number;
 }>`
   flex-direction: column;
-  ${({ justify }) => (justify ? `justify-content: ${justify};` : "")}
-  ${({ align }) => (align ? `align-items: ${align};` : "")}
-  ${({ gap, theme }) =>
-    gap
-      ? `gap: ${theme.spacing[gap as keyof typeof theme.spacing] || gap}px;`
+  ${(props: any) => (props.justify ? `justify-content: ${props.justify};` : "")}
+  ${(props: any) => (props.align ? `align-items: ${props.align};` : "")}
+      ${(props: any) =>
+    typeof props.gap !== "undefined" &&
+    props.theme &&
+    props.theme.spacing &&
+    props.gap in props.theme.spacing
+      ? `gap: ${
+          props.theme.spacing[props.gap as keyof typeof props.theme.spacing]
+        }px;`
+      : props.gap
+      ? `gap: ${props.gap}px;`
       : ""}
 `;
 
 export const Spacer = styled.View<{ size?: "xs" | "sm" | "md" | "lg" | "xl" }>`
-  height: ${({ theme, size = "md" }) => theme.spacing[size]}px;
+  height: ${({ theme, size = "md" }: any) => `${theme.spacing[size]}px`};
 `;
 
 // Divider
@@ -271,7 +291,7 @@ export const Divider = styled.View`
 export const Badge = styled.View<{
   variant?: "primary" | "secondary" | "success" | "warning" | "error";
 }>`
-  background-color: ${({ theme, variant = "primary" }) => {
+  background-color: ${({ theme, variant = "primary" }: any) => {
     switch (variant) {
       case "secondary":
         return theme.colors.secondary;

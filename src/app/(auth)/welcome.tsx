@@ -14,7 +14,7 @@ import Logo from "@/components/Logo";
 import { useAuth } from "@/context/AuthContext";
 import { useTranslation } from "react-i18next";
 
-const introImage = require("../../../assets/images/IntroImage.webp");
+const introImage = require("../../../assets/images/introimage.webp");
 
 export default function WelcomeScreen() {
   const router = useRouter();

@@ -7,7 +7,7 @@
     "icon": "./assets/images/icon.png",
     "scheme": ["luxurymarketplace", "appwrite-callback-6910079a00217d16d0ed"],
     "userInterfaceStyle": "dark",
-    "newArchEnabled": false,
+    "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.elianismedina05.luxurymarketplace"
@@ -22,9 +22,13 @@
       "package": "com.elianismedina05.luxurymarketplace",
       "permissions": [
         "android.permission.RECORD_AUDIO",
+        "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.CAMERA",
+        "android.permission.INTERNET",
         "android.permission.MODIFY_AUDIO_SETTINGS",
-        "android.permission.RECORD_AUDIO",
-        "android.permission.MODIFY_AUDIO_SETTINGS"
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.WAKE_LOCK",
+        "android.permission.BLUETOOTH"
       ]
     },
     "web": {

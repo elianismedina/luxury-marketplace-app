@@ -1,4 +1,25 @@
 {
+  "search": {
+    "title": "Ejemplo ElevenLabs React Native",
+    "subtitle": "¡Recuerda configurar el agentId en el archivo .env!",
+    "status": {
+      "connected": "Conectado",
+      "connecting": "Conectando",
+      "disconnected": "Desconectado"
+    },
+    "speaking": "🎤 Hablando IA",
+    "listening": "👂 Escuchando IA",
+    "starting": "Iniciando...",
+    "start": "Iniciar Conversación",
+    "end": "Finalizar Conversación",
+    "feedback": "¿Cómo fue esa respuesta?",
+    "like": "Me gusta",
+    "dislike": "No me gusta",
+    "send_message": "Enviar Mensaje de Texto",
+    "input_placeholder": "Escribe tu mensaje o contexto... (Presiona Enter para enviar)",
+    "send": "Enviar Mensaje",
+    "send_context": "Enviar Contexto"
+  },
   "common": {
     "cambiar_idioma": "Cambiar Idioma",
     "seleccionar_ciudad": "Seleccionar Ciudad",
@@ -54,7 +75,6 @@
     "back_to_register": "Volver al registro",
     "no_account_question": "¿No tienes una cuenta?",
     "already_have_account": "¿Ya tienes una cuenta?",
-
 
     "messages": {
       "login_success": "✓ Sesión iniciada correctamente",

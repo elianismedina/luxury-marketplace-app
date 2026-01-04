@@ -38,8 +38,8 @@ type PerfilFormData = {
 
 export default function CompletarPerfilScreen() {
   const router = useRouter();
-  console.log("[COMPLETAR PERFIL] Renderizando pantalla. User:", user);
   const { user, initializing } = useAuth();
+  console.log("[COMPLETAR PERFIL] Renderizando pantalla. User:", user);
   const [loading, setLoading] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [formData, setFormData] = useState<PerfilFormData>({

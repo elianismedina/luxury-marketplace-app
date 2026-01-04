@@ -18,14 +18,13 @@ import Logo from "@/components/Logo";
 import { CATEGORIAS_ALIADO } from "@/constants/categorias";
 import { useAuth } from "@/context/AuthContext";
 import {
+  categoriesCollectionId,
   databaseId,
   databases,
   ID,
   isAppwriteConfigured,
   Query,
- categoriesCollectionId } from "@/lib/appwrite";
-
-
+} from "@/lib/appwrite";
 
 const PERFIL_ALIADO_COLLECTION_ID = "perfil_aliado";
 
@@ -56,7 +55,7 @@ export default function CategoriasServiciosScreen() {
         const dbCats = res.documents || [];
         for (const cat of CATEGORIAS_ALIADO) {
           const exists = dbCats.some(
-            (dbCat) => dbCat.$id === cat.id || dbCat.nombre === cat.name
+            (dbCat: any) => dbCat.$id === cat.id || dbCat.nombre === cat.name
           );
           if (!exists) {
             await databases.createDocument(
@@ -70,7 +69,7 @@ export default function CategoriasServiciosScreen() {
             );
           }
         }
-      } catch (e) {
+      } catch (e: any) {
         // Ignore errors (e.g., permissions)
         console.warn(
           "No se pudo sincronizar categorías en Appwrite:",
@@ -87,7 +86,7 @@ export default function CategoriasServiciosScreen() {
       return;
     }
     loadCategoriasSeleccionadas();
-  }, [user]);
+  }, [user, refresh, loadCategoriasSeleccionadas]);
 
   if (initializing || !user || !user.email) {
     return (
@@ -113,6 +112,7 @@ export default function CategoriasServiciosScreen() {
       .trim();
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   async function loadCategoriasSeleccionadas() {
     try {
       const email = user?.email;
