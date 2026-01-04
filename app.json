@@ -7,7 +7,7 @@
     "icon": "./assets/images/icon.png",
     "scheme": ["luxurymarketplace", "appwrite-callback-6910079a00217d16d0ed"],
     "userInterfaceStyle": "dark",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.elianismedina05.luxurymarketplace"
