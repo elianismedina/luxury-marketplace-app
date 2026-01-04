@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@bacons/text-decoder": "^0.0.0",
     "@clerk/clerk-expo": "^2.19.14",
     "@config-plugins/react-native-webrtc": "^13.0.0",
     "@elevenlabs/react-native": "^0.5.7",
