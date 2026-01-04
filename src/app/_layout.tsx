@@ -1,3 +1,4 @@
+import { ElevenLabsProvider } from "@elevenlabs/react-native";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import {
   DarkTheme,
@@ -69,14 +70,16 @@ export default function RootLayout() {
     <ErrorBoundary>
       <ClerkProvider tokenCache={tokenCache} publishableKey={publishableKey}>
         <ClerkLoaded>
-          <StyledThemeProvider theme={theme}>
-            <PaperProvider theme={paperTheme}>
-              <AuthProvider>
-                <RootLayoutNav />
-                <StatusBar style="light" backgroundColor="#121212" />
-              </AuthProvider>
-            </PaperProvider>
-          </StyledThemeProvider>
+          <ElevenLabsProvider>
+            <StyledThemeProvider theme={theme}>
+              <PaperProvider theme={paperTheme}>
+                <AuthProvider>
+                  <RootLayoutNav />
+                  <StatusBar style="light" backgroundColor="#121212" />
+                </AuthProvider>
+              </PaperProvider>
+            </StyledThemeProvider>
+          </ElevenLabsProvider>
         </ClerkLoaded>
       </ClerkProvider>
     </ErrorBoundary>

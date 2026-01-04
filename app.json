@@ -51,7 +51,8 @@
       "expo-localization",
       "expo-secure-store",
       "expo-asset",
-      "@config-plugins/react-native-webrtc"
+      "@config-plugins/react-native-webrtc",
+      "@livekit/react-native-expo-plugin"
     ],
     "experiments": {
       "typedRoutes": true

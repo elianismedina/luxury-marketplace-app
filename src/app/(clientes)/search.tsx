@@ -2,7 +2,6 @@ import {
   BodyText,
   Column,
   Container,
-  Input,
   PrimaryButton,
   Row,
   SecondaryButton,
@@ -11,9 +10,12 @@ import type { ConversationStatus } from "@elevenlabs/react-native";
 import { useConversation } from "@elevenlabs/react-native";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Keyboard } from "react-native";
-import { useTheme } from "styled-components/native";
+import { Platform } from "react-native";
+import styled, { useTheme } from "styled-components/native";
+
 import { changeBrightness, flashScreen, getBatteryLevel } from "./utils/tools";
+
+import type { DefaultTheme } from "styled-components";
 
 const ConversationScreen = () => {
   const theme = useTheme();
@@ -25,12 +27,18 @@ const ConversationScreen = () => {
       flashScreen,
     },
     onConnect: ({ conversationId }: { conversationId: string }) => {
+      setAgentStatus("connected");
+      setAgentMode(undefined);
       console.log("✅ Connected to conversation", conversationId);
     },
     onDisconnect: (details: any) => {
+      setAgentStatus("disconnected");
+      setAgentMode(undefined);
       console.log("❌ Disconnected from conversation", details);
     },
     onError: (message: string, context?: Record<string, unknown>) => {
+      setAgentStatus("disconnected");
+      setAgentMode(undefined);
       console.error("❌ Conversation error:", message, context);
     },
     onMessage: (payload: any) => {
@@ -38,20 +46,26 @@ const ConversationScreen = () => {
       console.log(`💬 Message from ${source}:`, message);
     },
     onModeChange: ({ mode }: { mode: "speaking" | "listening" }) => {
+      setAgentMode(mode);
+      setAgentStatus("connected");
       console.log(`🔊 Mode: ${mode}`);
     },
   });
 
-  const [isStarting, setIsStarting] = useState(false);
-  const [textInput, setTextInput] = useState("");
+  // Estado local sincronizado con el agente
+  const [agentStatus, setAgentStatus] = useState<ConversationStatus>(
+    conversation.status
+  );
+  const [agentMode, setAgentMode] = useState<
+    "speaking" | "listening" | undefined
+  >(undefined);
 
-  const handleSubmitText = () => {
-    if (textInput.trim()) {
-      conversation.sendUserMessage(textInput.trim());
-      setTextInput("");
-      Keyboard.dismiss();
-    }
-  };
+  // Sincroniza el estado local con el status del hook
+  React.useEffect(() => {
+    setAgentStatus(conversation.status);
+  }, [conversation.status]);
+
+  const [isStarting, setIsStarting] = useState(false);
 
   const endConversation = async () => {
     try {
@@ -61,7 +75,9 @@ const ConversationScreen = () => {
     }
   };
 
-  const getStatusColor = (status: ConversationStatus): string => {
+  const getStatusColor = (
+    status: ConversationStatus | "speaking" | "listening"
+  ): string => {
     switch (status) {
       case "connected":
         return "#10B981";
@@ -69,6 +85,10 @@ const ConversationScreen = () => {
         return "#F59E0B";
       case "disconnected":
         return "#EF4444";
+      case "speaking":
+        return "#2563eb";
+      case "listening":
+        return "#f43f5e";
       default:
         return "#6B7280";
     }
@@ -78,50 +98,59 @@ const ConversationScreen = () => {
     return status[0].toUpperCase() + status.slice(1);
   };
 
-  const canStart = conversation.status === "disconnected" && !isStarting;
-  const canEnd = conversation.status === "connected";
+  const canStart = agentStatus === "disconnected" && !isStarting;
+  const canEnd =
+    ["connected", "speaking", "listening"].includes(agentStatus) ||
+    Boolean(agentMode);
+  const statusColor = getStatusColor(agentMode ? agentMode : agentStatus);
+  const statusText = agentMode
+    ? agentMode[0].toUpperCase() + agentMode.slice(1)
+    : getStatusText(agentStatus);
 
   return (
     <Container>
       <Column gap={8}>
-        <Input
-          value={textInput}
-          onChangeText={(text: string) => {
-            setTextInput(text);
-            if (text.length > 0) {
-              conversation.sendUserActivity();
-            }
-          }}
-          placeholder={t(
-            "search.input_placeholder",
-            "Escribe tu mensaje o contexto... (Presiona Enter para enviar)"
-          )}
-          multiline
-          onSubmitEditing={handleSubmitText}
-          returnKeyType="send"
-          blurOnSubmit={true}
-        />
+        <Row style={{ alignItems: "center", marginBottom: theme.spacing.sm }}>
+          <StatusDot color={statusColor} />
+          <BodyText
+            style={{ marginLeft: 8 }}
+            color={theme.colors.textSecondary}
+          >
+            {statusText}
+          </BodyText>
+        </Row>
         <Row gap={16}>
           <PrimaryButton
-            onPress={handleSubmitText}
-            disabled={!textInput.trim()}
-          >
-            <BodyText color="#fff">
-              💬 {t("search.send", "Enviar Mensaje")}
-            </BodyText>
-          </PrimaryButton>
-          <SecondaryButton
-            onPress={() => {
-              if (textInput.trim()) {
-                conversation.sendContextualUpdate(textInput.trim());
-                setTextInput("");
-                Keyboard.dismiss();
+            onPress={async () => {
+              setIsStarting(true);
+              try {
+                await conversation.startSession({
+                  agentId: process.env.EXPO_PUBLIC_AGENT_ID,
+                  dynamicVariables: { platform: Platform.OS },
+                });
+              } catch (error) {
+                console.error("Failed to start conversation:", error);
+              } finally {
+                setIsStarting(false);
               }
             }}
-            disabled={!textInput.trim()}
+            disabled={!canStart}
           >
             <BodyText color="#fff">
-              📝 {t("search.send_context", "Enviar Contexto")}
+              {isStarting
+                ? t("search.starting", "Iniciando...")
+                : t("search.start", "Iniciar Conversación")}
+            </BodyText>
+          </PrimaryButton>
+          <SecondaryButton onPress={endConversation} disabled={!canEnd}>
+            <BodyText
+              color={
+                canEnd
+                  ? theme.colors.textOnSecondary
+                  : theme.colors.textDisabled
+              }
+            >
+              {t("search.end", "Finalizar Conversación")}
             </BodyText>
           </SecondaryButton>
         </Row>
@@ -129,5 +158,18 @@ const ConversationScreen = () => {
     </Container>
   );
 };
+
+interface StatusDotProps {
+  color: string;
+  theme: DefaultTheme;
+}
+
+const StatusDot = styled.View<StatusDotProps>`
+  width: 14px;
+  height: 14px;
+  border-radius: 7px;
+  background-color: ${(props: StatusDotProps) => props.color};
+  border: 2px solid ${(props: StatusDotProps) => props.theme.colors.background};
+`;
 
 export default ConversationScreen;
