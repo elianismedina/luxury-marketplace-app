@@ -89,7 +89,8 @@
           "@livekit/react-native",
           "react-native-webrtc",
           "@livekit/react-native-expo-plugin",
-          "@solana-mobile/mobile-wallet-adapter-protocol"
+          "@solana-mobile/mobile-wallet-adapter-protocol",
+          "@livekit/react-native-webrtc"
         ],
         "listUnknownPackages": false
       }
