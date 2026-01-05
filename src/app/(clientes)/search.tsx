@@ -10,7 +10,8 @@ import type { ConversationStatus } from "@elevenlabs/react-native";
 import { useConversation } from "@elevenlabs/react-native";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Platform } from "react-native";
+import { PermissionsAndroid, Platform } from "react-native";
+
 import styled, { useTheme } from "styled-components/native";
 
 import { changeBrightness, flashScreen, getBatteryLevel } from "./utils/tools";
@@ -18,6 +19,35 @@ import { changeBrightness, flashScreen, getBatteryLevel } from "./utils/tools";
 import type { DefaultTheme } from "styled-components";
 
 const ConversationScreen = () => {
+  // Request microphone permission (Android)
+  const requestMicPermission = async () => {
+    if (Platform.OS === "android") {
+      try {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
+          {
+            title: "Microphone Permission",
+            message:
+              "This app needs access to your microphone so you can talk to the AI.",
+            buttonNeutral: "Ask Me Later",
+            buttonNegative: "Cancel",
+            buttonPositive: "OK",
+          }
+        );
+        if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+          console.log("You can use the microphone");
+          return true;
+        } else {
+          console.log("Microphone permission denied");
+          return false;
+        }
+      } catch (err) {
+        console.warn(err);
+        return false;
+      }
+    }
+    return true;
+  };
   const theme = useTheme();
   const { t } = useTranslation();
   const conversation = useConversation({
@@ -124,6 +154,11 @@ const ConversationScreen = () => {
             onPress={async () => {
               setIsStarting(true);
               try {
+                const hasPermission = await requestMicPermission();
+                if (!hasPermission) {
+                  setIsStarting(false);
+                  return;
+                }
                 await conversation.startSession({
                   agentId: process.env.EXPO_PUBLIC_AGENT_ID,
                   dynamicVariables: { platform: Platform.OS },
