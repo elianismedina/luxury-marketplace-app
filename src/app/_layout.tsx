@@ -1,5 +1,23 @@
 import { ElevenLabsProvider } from "@elevenlabs/react-native";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
+// --- START: Unhandled Promise Rejection Handler ---
+// This is a safety net to prevent crashes from uncaught promises.
+// It logs the error for debugging but prevents the app from crashing.
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const tracking = require("promise/setimmediate/rejection-tracking");
+
+tracking.enable({
+  allRejections: true,
+  onUnhandled: (id: number, error: any) => {
+    console.error("Unhandled Promise Rejection:", { id, error });
+    // In a production app, you might log this to an error reporting service.
+  },
+  onHandled: (id: number) => {
+    // This is called when a promise is rejected but handled later.
+    // You can use this to clear any error indicators.
+  },
+});
+// --- END: Unhandled Promise Rejection Handler ---
 import {
   DarkTheme,
   DefaultTheme,

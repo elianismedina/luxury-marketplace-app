@@ -10,7 +10,11 @@ import type { ConversationStatus } from "@elevenlabs/react-native";
 import { useConversation } from "@elevenlabs/react-native";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { PermissionsAndroid, Platform } from "react-native";
+import {
+  PermissionsAndroid,
+  Platform,
+  Alert,
+} from "react-native";
 
 import styled, { useTheme } from "styled-components/native";
 
@@ -65,11 +69,23 @@ const ConversationScreen = () => {
       setAgentStatus("disconnected");
       setAgentMode(undefined);
       console.log("❌ Disconnected from conversation", details);
+      if (details?.reason === "agent") {
+        Alert.alert(
+          "Agent Disconnected",
+          "The voice agent disconnected unexpectedly. Please check your ElevenLabs account for any issues (e.g., exhausted credits) and try again.",
+          [{ text: "OK" }]
+        );
+      }
     },
     onError: (message: string, context?: Record<string, unknown>) => {
       setAgentStatus("disconnected");
       setAgentMode(undefined);
       console.error("❌ Conversation error:", message, context);
+      Alert.alert(
+        "Conversation Error",
+        "Could not connect to the voice agent. Please check your internet connection and ensure your ElevenLabs account has sufficient credits.",
+        [{ text: "OK" }]
+      );
     },
     onMessage: (payload: any) => {
       const { message, source } = payload;
@@ -165,6 +181,11 @@ const ConversationScreen = () => {
                 });
               } catch (error) {
                 console.error("Failed to start conversation:", error);
+                Alert.alert(
+                  "Failed to Start Conversation",
+                  "Could not start the conversation. Please check your internet connection and ensure your ElevenLabs account has sufficient credits.",
+                  [{ text: "OK" }]
+                );
               } finally {
                 setIsStarting(false);
               }
