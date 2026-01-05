@@ -9,6 +9,9 @@
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "ios": {
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "This app needs access to the microphone for voice search."
+      },
       "supportsTablet": true,
       "bundleIdentifier": "com.elianismedina05.luxurymarketplace"
     },

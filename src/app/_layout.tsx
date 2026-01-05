@@ -1,22 +1,4 @@
-import { ElevenLabsProvider } from "@elevenlabs/react-native";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
-// --- START: Unhandled Promise Rejection Handler ---
-// This is a safety net to prevent crashes from uncaught promises.
-// It logs the error for debugging but prevents the app from crashing.
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const tracking = require("promise/setimmediate/rejection-tracking");
-
-tracking.enable({
-  allRejections: true,
-  onUnhandled: (id: number, error: any) => {
-    console.error("Unhandled Promise Rejection:", { id, error });
-    // In a production app, you might log this to an error reporting service.
-  },
-  onHandled: (id: number) => {
-    // This is called when a promise is rejected but handled later.
-    // You can use this to clear any error indicators.
-  },
-});
 // --- END: Unhandled Promise Rejection Handler ---
 import {
   DarkTheme,
@@ -37,11 +19,29 @@ import { AnimatedSplashScreen } from "@/components/AnimatedSplashScreen";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { useColorScheme } from "@/components/useColorScheme";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
+import { ConnectionProvider } from "@/hooks/useConnection";
 import "@/i18n";
 import { paperDarkTheme } from "@/theme/paperTheme";
 import { theme } from "@/theme/theme";
 import { ClerkLoaded, ClerkProvider } from "@clerk/clerk-expo";
 import { tokenCache } from "@clerk/clerk-expo/token-cache";
+// --- START: Unhandled Promise Rejection Handler ---
+// This is a safety net to prevent crashes from uncaught promises.
+// It logs the error for debugging but prevents the app from crashing.
+
+const tracking = require("promise/setimmediate/rejection-tracking");
+
+tracking.enable({
+  allRejections: true,
+  onUnhandled: (id: number, error: any) => {
+    console.error("Unhandled Promise Rejection:", { id, error });
+    // In a production app, you might log this to an error reporting service.
+  },
+  onHandled: (id: number) => {
+    // This is called when a promise is rejected but handled later.
+    // You can use this to clear any error indicators.
+  },
+});
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -88,16 +88,16 @@ export default function RootLayout() {
     <ErrorBoundary>
       <ClerkProvider tokenCache={tokenCache} publishableKey={publishableKey}>
         <ClerkLoaded>
-          <ElevenLabsProvider>
-            <StyledThemeProvider theme={theme}>
-              <PaperProvider theme={paperTheme}>
-                <AuthProvider>
+          <StyledThemeProvider theme={theme}>
+            <PaperProvider theme={paperTheme}>
+              <AuthProvider>
+                <ConnectionProvider>
                   <RootLayoutNav />
                   <StatusBar style="light" backgroundColor="#121212" />
-                </AuthProvider>
-              </PaperProvider>
-            </StyledThemeProvider>
-          </ElevenLabsProvider>
+                </ConnectionProvider>
+              </AuthProvider>
+            </PaperProvider>
+          </StyledThemeProvider>
         </ClerkLoaded>
       </ClerkProvider>
     </ErrorBoundary>
