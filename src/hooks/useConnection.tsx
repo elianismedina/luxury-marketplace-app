@@ -1,6 +1,7 @@
 import { SessionProvider, useSession } from "@livekit/components-react";
 import { TokenSource } from "livekit-client";
 import { createContext, useContext, useMemo, useState } from "react";
+import { Platform } from "react-native";
 import { requestRecordingPermissionsAsync } from "expo-audio";
 
 // TODO: Add your Sandbox ID here
@@ -41,6 +42,21 @@ export function useConnection() {
 }
 
 async function requestMicPermission() {
+  if (Platform.OS === "web") {
+    // On web, check if mediaDevices is available
+    if (typeof navigator !== "undefined" && navigator.mediaDevices) {
+      try {
+        const { granted } = await requestRecordingPermissionsAsync();
+        return granted;
+      } catch (error) {
+        console.warn("Failed to request mic permission on web:", error);
+        return false;
+      }
+    } else {
+      console.warn("WebRTC not supported on this browser");
+      return false;
+    }
+  }
   try {
     const { granted } = await requestRecordingPermissionsAsync();
     return granted;
