@@ -83,7 +83,9 @@
     "lint": "expo lint"
   },
   "version": "1.0.0",
-  "overrides": {},
+  "overrides": {
+    "expo-file-system": "~19.0.21"
+  },
   "expo": {
     "doctor": {
       "reactNativeDirectoryCheck": {
