@@ -1,6 +1,6 @@
 import { View } from "react-native";
-import { useState } from "react";
-import { ReceivedMessage } from "@livekit/components-react";
+import { useState, useEffect } from "react";
+import { useSessionMessages } from "@livekit/components-react";
 import { useConnection } from "@/hooks/useConnection";
 import AgentVisualization from "@/app/assistant/ui/AgentVisualization";
 import ChatBar from "@/app/assistant/ui/ChatBar";
@@ -8,16 +8,24 @@ import ChatLog from "@/app/assistant/ui/ChatLog";
 import ControlBar from "@/app/assistant/ui/ControlBar";
 
 export default function SearchScreen() {
-  const { isConnectionActive, connect, disconnect } = useConnection();
+  const { isConnectionActive, isConfigured, connect, disconnect } = useConnection();
   const [chatValue, setChatValue] = useState("");
-  const [messages, setMessages] = useState<ReceivedMessage[]>([]);
+  const { messages, send: sendMessage, isSending } = useSessionMessages();
   const [isMicEnabled, setIsMicEnabled] = useState(false);
   const [isCameraEnabled, setIsCameraEnabled] = useState(false);
   const [isScreenShareEnabled, setIsScreenShareEnabled] = useState(false);
   const [isChatEnabled, setIsChatEnabled] = useState(true);
 
-  const handleChatSend = (text: string) => {
-    // Add message logic here
+  useEffect(() => {
+    if (isConfigured && !isConnectionActive) {
+      connect();
+    }
+  }, [isConfigured, isConnectionActive, connect]);
+
+  const handleChatSend = async (text: string) => {
+    if (text.trim()) {
+      await sendMessage(text.trim());
+    }
     setChatValue("");
   };
 

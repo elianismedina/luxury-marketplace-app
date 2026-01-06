@@ -3,7 +3,7 @@ import { ActivityIndicator, FlatList } from "react-native";
 import { Models } from "react-native-appwrite";
 import styled, { DefaultTheme, useTheme } from "styled-components/native";
 
-import { categoriesCollectionId, databaseId, databases } from "@/lib/appwrite";
+import { categoriesCollectionId, databaseId, databases, isAppwriteConfigured } from "@/lib/appwrite";
 import DynamicSvgIcon from "./DynamicSvgIcon";
 import { BodyText, PaddedContainer, Title } from "./styled";
 
@@ -33,6 +33,11 @@ const CategoryList = () => {
 
   useEffect(() => {
     const fetchCategories = async () => {
+      if (!isAppwriteConfigured) {
+        setError("Appwrite no está configurado.");
+        setLoading(false);
+        return;
+      }
       try {
         setLoading(true);
         const response = await databases.listDocuments(

@@ -1,5 +1,4 @@
 import {
-  Image,
   KeyboardAvoidingView,
   Platform,
   StyleProp,
@@ -9,6 +8,7 @@ import {
   View,
   ViewStyle,
 } from "react-native";
+import { FontAwesome } from "@expo/vector-icons";
 
 type ChatBarProps = {
   style: StyleProp<ViewStyle>;
@@ -43,9 +43,7 @@ export default function ChatBar({
           activeOpacity={0.7}
           onPress={() => onChatSend(value)}
         >
-          <View>
-            <Image source={require("@/assets/images/arrow_upward_24dp.png")} />
-          </View>
+          <FontAwesome name="arrow-up" size={24} color="#000" />
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>

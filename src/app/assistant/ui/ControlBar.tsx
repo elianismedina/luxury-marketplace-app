@@ -2,13 +2,13 @@ import { TrackReference, useLocalParticipant } from "@livekit/components-react";
 import { BarVisualizer } from "@livekit/react-native";
 import { useEffect, useState } from "react";
 import {
-  Image,
   StyleProp,
   StyleSheet,
   TouchableOpacity,
   View,
   ViewStyle,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 
 type ControlBarProps = {
   style?: StyleProp<ViewStyle>;
@@ -45,20 +45,12 @@ export default function ControlBar({ style = {}, options }: ControlBarProps) {
     }
   }, [microphoneTrack, localParticipant]);
 
-  // Images
-  let micImage = options.isMicEnabled
-    ? require("@/assets/images/mic_24dp.png")
-    : require("@/assets/images/mic_off_24dp.png");
-  let cameraImage = options.isCameraEnabled
-    ? require("@/assets/images/videocam_24dp.png")
-    : require("@/assets/images/videocam_off_24dp.png");
-  let screenShareImage = options.isScreenShareEnabled
-    ? require("@/assets/images/present_to_all_24dp.png")
-    : require("@/assets/images/present_to_all_off_24dp.png");
-  let chatImage = options.isChatEnabled
-    ? require("@/assets/images/chat_24dp.png")
-    : require("@/assets/images/chat_off_24dp.png");
-  let exitImage = require("@/assets/images/call_end_24dp.png");
+  // Icons
+  const micIcon = options.isMicEnabled ? "mic" : "mic-off";
+  const cameraIcon = options.isCameraEnabled ? "camera" : "camera-outline";
+  const screenShareIcon = options.isScreenShareEnabled ? "desktop" : "desktop-outline";
+  const chatIcon = options.isChatEnabled ? "chatbox" : "chatbox-outline";
+  const exitIcon = "call";
 
   return (
     <View style={[style, styles.container]}>
@@ -70,7 +62,7 @@ export default function ControlBar({ style = {}, options }: ControlBarProps) {
         activeOpacity={0.7}
         onPress={() => options.onMicClick()}
       >
-        <Image style={styles.icon} source={micImage} />
+        <Ionicons name={micIcon} size={20} color="#CCCCCC" style={styles.icon} />
         <BarVisualizer
           barCount={3}
           trackRef={trackRef}
@@ -91,7 +83,7 @@ export default function ControlBar({ style = {}, options }: ControlBarProps) {
         activeOpacity={0.7}
         onPress={() => options.onCameraClick()}
       >
-        <Image style={styles.icon} source={cameraImage} />
+        <Ionicons name={cameraIcon} size={20} color="#CCCCCC" style={styles.icon} />
       </TouchableOpacity>
       <TouchableOpacity
         style={[
@@ -101,7 +93,7 @@ export default function ControlBar({ style = {}, options }: ControlBarProps) {
         activeOpacity={0.7}
         onPress={() => options.onScreenShareClick()}
       >
-        <Image style={styles.icon} source={screenShareImage} />
+        <Ionicons name={screenShareIcon} size={20} color="#CCCCCC" style={styles.icon} />
       </TouchableOpacity>
       <TouchableOpacity
         style={[
@@ -111,14 +103,14 @@ export default function ControlBar({ style = {}, options }: ControlBarProps) {
         activeOpacity={0.7}
         onPress={() => options.onChatClick()}
       >
-        <Image style={styles.icon} source={chatImage} />
+        <Ionicons name={chatIcon} size={20} color="#CCCCCC" style={styles.icon} />
       </TouchableOpacity>
       <TouchableOpacity
         style={styles.button}
         activeOpacity={0.7}
         onPress={() => options.onExitClick()}
       >
-        <Image style={styles.icon} source={exitImage} />
+        <Ionicons name={exitIcon} size={20} color="#CCCCCC" style={styles.icon} />
       </TouchableOpacity>
     </View>
   );

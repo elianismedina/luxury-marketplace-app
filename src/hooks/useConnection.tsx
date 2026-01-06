@@ -1,13 +1,10 @@
-import {
-  TokenSource,
-  TokenSourceBase,
-  TokenSourceResponseObject,
-} from "livekit-client";
-import { createContext, useContext, useMemo, useState } from "react";
 import { SessionProvider, useSession } from "@livekit/components-react";
+import { TokenSource } from "livekit-client";
+import { createContext, useContext, useMemo, useState } from "react";
+import { requestRecordingPermissionsAsync } from "expo-audio";
 
 // TODO: Add your Sandbox ID here
-const sandboxID = "";
+const sandboxID = process.env.EXPO_PUBLIC_LIVEKIT_SANDBOX_ID || "";
 
 // The name of the agent you wish to be dispatched.
 const agentName = undefined;
@@ -17,17 +14,20 @@ const agentName = undefined;
 // and using one of your API Keys to generate a token with custom TTL and permissions.
 
 // For use without a token server.
-const hardcodedUrl = "";
-const hardcodedToken = "";
+const hardcodedUrl = process.env.EXPO_PUBLIC_LIVEKIT_URL || "";
+const hardcodedToken = process.env.EXPO_PUBLIC_LIVEKIT_TOKEN || "";
+const tokenEndpoint = process.env.EXPO_PUBLIC_LIVEKIT_TOKEN_ENDPOINT || "";
 
 interface ConnectionContextType {
   isConnectionActive: boolean;
+  isConfigured: boolean;
   connect: () => void;
   disconnect: () => void;
 }
 
 const ConnectionContext = createContext<ConnectionContextType>({
   isConnectionActive: false,
+  isConfigured: false,
   connect: () => {},
   disconnect: () => {},
 });
@@ -40,6 +40,26 @@ export function useConnection() {
   return ctx;
 }
 
+async function requestMicPermission() {
+  try {
+    const { granted } = await requestRecordingPermissionsAsync();
+    return granted;
+  } catch (error) {
+    console.warn("Failed to request mic permission:", error);
+    return false;
+  }
+}
+
+export function isLiveKitConfigured(): boolean {
+  return !!(
+    process.env.EXPO_PUBLIC_LIVEKIT_SANDBOX_ID ||
+    (process.env.EXPO_PUBLIC_LIVEKIT_URL &&
+      process.env.EXPO_PUBLIC_LIVEKIT_TOKEN) ||
+    (process.env.EXPO_PUBLIC_LIVEKIT_URL &&
+      process.env.EXPO_PUBLIC_LIVEKIT_TOKEN_ENDPOINT)
+  );
+}
+
 interface ConnectionProviderProps {
   children: React.ReactNode;
 }
@@ -47,16 +67,37 @@ interface ConnectionProviderProps {
 export function ConnectionProvider({ children }: ConnectionProviderProps) {
   const [isConnectionActive, setIsConnectionActive] = useState(false);
 
+  const isConfigured =
+    !!sandboxID ||
+    !!(hardcodedUrl && hardcodedToken) ||
+    !!(hardcodedUrl && tokenEndpoint);
+
   const tokenSource = useMemo(() => {
+    if (tokenEndpoint) {
+      return {
+        fetch: async () => {
+          const res = await fetch(tokenEndpoint);
+          const text = await res.text();
+          console.log("Token endpoint response:", text);
+          const data = JSON.parse(text);
+
+          return {
+            serverUrl: hardcodedUrl,
+            participantToken: data.token,
+          };
+        },
+      };
+    }
+
     if (sandboxID) {
       return TokenSource.sandboxTokenServer(sandboxID);
-    } else {
-      return TokenSource.literal({
-        serverUrl: hardcodedUrl,
-        participantToken: hardcodedToken,
-      } satisfies TokenSourceResponseObject);
     }
-  }, [sandboxID, hardcodedUrl, hardcodedToken]);
+
+    return TokenSource.literal({
+      serverUrl: hardcodedUrl,
+      participantToken: hardcodedToken,
+    });
+  }, [sandboxID, hardcodedUrl, hardcodedToken, tokenEndpoint]);
 
   const session = useSession(
     tokenSource,
@@ -68,7 +109,16 @@ export function ConnectionProvider({ children }: ConnectionProviderProps) {
   const value = useMemo(() => {
     return {
       isConnectionActive,
-      connect: () => {
+      isConfigured,
+      connect: async () => {
+        if (!isConfigured) return;
+
+        const granted = await requestMicPermission();
+        if (!granted) {
+          console.warn("Microphone permission denied");
+          return;
+        }
+
         setIsConnectionActive(true);
         startSession();
       },
@@ -77,7 +127,7 @@ export function ConnectionProvider({ children }: ConnectionProviderProps) {
         endSession();
       },
     };
-  }, [startSession, endSession, isConnectionActive]);
+  }, [startSession, endSession, isConnectionActive, isConfigured]);
 
   return (
     <SessionProvider session={session}>

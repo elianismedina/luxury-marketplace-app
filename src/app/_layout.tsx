@@ -1,3 +1,4 @@
+import 'react-native-get-random-values';
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 // --- END: Unhandled Promise Rejection Handler ---
 import {
