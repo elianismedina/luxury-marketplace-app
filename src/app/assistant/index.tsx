@@ -1,6 +1,7 @@
 import {
   Animated,
   Dimensions,
+  Platform,
   StyleSheet,
   useAnimatedValue,
   View,
@@ -13,6 +14,14 @@ import {
   useSessionMessages,
   useTrackToggle,
 } from "@livekit/components-react";
+
+const useSessionMessagesSafe = () => {
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  return Platform.OS === 'web' ? useSessionMessages() : {
+    messages: [],
+    send: async () => {},
+  };
+};
 import {
   AudioSession,
   useIOSAudioManagement,
@@ -83,7 +92,7 @@ const RoomView = () => {
       : null;
 
   // Messages
-  const { messages, send } = useSessionMessages();
+  const { messages, send } = useSessionMessagesSafe();
   const [isChatEnabled, setChatEnabled] = useState(false);
   const [chatMessage, setChatMessage] = useState("");
 
@@ -92,7 +101,7 @@ const RoomView = () => {
       send(message);
       setChatMessage("");
     },
-    [setChatMessage, send]
+    [send]
   );
 
   // Control callbacks

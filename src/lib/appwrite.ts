@@ -88,6 +88,10 @@ if (platform && !isWeb) {
   client.setPlatform(platform);
 }
 
+export function setAppwriteJWT(jwt: string) {
+  client.setJWT(jwt);
+}
+
 export const teams = new Teams(client);
 
 export const account = new Account(client);

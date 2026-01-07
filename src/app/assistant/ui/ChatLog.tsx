@@ -1,7 +1,7 @@
 import {
-  ReceivedMessage,
-  useLocalParticipant,
-} from "@livekit/components-react";
+  FlatList,
+} from "react-native";
+import { useLocalParticipant } from "@livekit/react-native";
 import { useCallback } from "react";
 import {
   ListRenderItemInfo,
@@ -14,9 +14,14 @@ import {
 } from "react-native";
 import Animated, { LinearTransition } from "react-native-reanimated";
 
+type SimpleMessage = {
+  from: string;
+  message: string;
+};
+
 export type ChatLogProps = {
   style: StyleProp<ViewStyle>;
-  messages: ReceivedMessage[];
+  messages: SimpleMessage[];
 };
 export default function ChatLog({
   style,
@@ -25,8 +30,8 @@ export default function ChatLog({
   const { localParticipant } = useLocalParticipant();
 
   const renderItem = useCallback(
-    ({ item }: ListRenderItemInfo<ReceivedMessage>) => {
-      const isLocalUser = item.from === localParticipant;
+    ({ item }: ListRenderItemInfo<SimpleMessage>) => {
+      const isLocalUser = item.from === localParticipant?.identity;
       if (isLocalUser) {
         return <UserTranscriptionText text={item.message} />;
       } else {

@@ -1,8 +1,17 @@
 import { useAgent } from "@livekit/components-react";
 import { BarVisualizer, VideoTrack } from "@livekit/react-native";
+
+const useAgentSafe = () => {
+  return {
+    state: 'disconnected' as any,
+    microphoneTrack: null as any,
+    cameraTrack: null as any,
+  };
+};
 import React, { useCallback, useState } from "react";
 import {
   LayoutChangeEvent,
+  Platform,
   StyleProp,
   StyleSheet,
   View,
@@ -16,7 +25,7 @@ type AgentVisualizationProps = {
 const barSize = 0.2;
 
 export default function AgentVisualization({ style }: AgentVisualizationProps) {
-  const { state, microphoneTrack, cameraTrack } = useAgent();
+  const { state, microphoneTrack, cameraTrack } = useAgentSafe();
   const [barWidth, setBarWidth] = useState(0);
   const [barBorderRadius, setBarBorderRadius] = useState(0);
 

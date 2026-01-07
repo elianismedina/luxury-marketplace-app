@@ -5,11 +5,13 @@ import {
   useSignUp,
   useUser,
 } from "@clerk/clerk-expo";
+import { setAppwriteJWT } from "@/lib/appwrite";
 
 import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
 } from "react";
@@ -39,7 +41,7 @@ type AuthContextValue = {
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const { isLoaded: authLoaded, userId, signOut } = useClerkAuth();
+  const { isLoaded: authLoaded, userId, signOut, getToken } = useClerkAuth();
   const { isLoaded: userLoaded, user: clerkUser } = useUser();
   const {
     signIn,
@@ -67,6 +69,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       name: clerkUser.fullName || clerkUser.firstName || "Usuario",
     };
   }, [clerkUser]);
+
+  // TODO: Set Appwrite JWT when user is authenticated
+  // Requires JWT key configuration in Appwrite dashboard
+  // useEffect(() => {
+  //   const setJWT = async () => {
+  //     if (user && getToken) {
+  //       try {
+  //         const token = await getToken();
+  //         if (token) {
+  //           setAppwriteJWT(token);
+  //       } catch (error) {
+  //         console.error("Error setting Appwrite JWT:", error);
+  //       }
+  //     }
+  //   };
+  //   setJWT();
+  // }, [user, getToken]);
 
   const refresh = useCallback(async () => {
     // Clerk handles refresh automatically via hooks

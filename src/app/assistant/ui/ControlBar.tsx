@@ -1,5 +1,5 @@
-import { TrackReference, useLocalParticipant } from "@livekit/components-react";
-import { BarVisualizer } from "@livekit/react-native";
+import { TrackReference } from "@livekit/components-react";
+import { BarVisualizer, useLocalParticipant } from "@livekit/react-native";
 import { useEffect, useState } from "react";
 import {
   StyleProp,
@@ -60,7 +60,15 @@ export default function ControlBar({ style = {}, options }: ControlBarProps) {
           options.isMicEnabled ? styles.enabledButton : undefined,
         ]}
         activeOpacity={0.7}
-        onPress={() => options.onMicClick()}
+        onPress={async () => {
+          try {
+            const enabled = !options.isMicEnabled;
+            await localParticipant.setMicrophoneEnabled(enabled);
+            options.onMicClick();
+          } catch (error) {
+            console.error("Error enabling microphone:", error);
+          }
+        }}
       >
         <Ionicons name={micIcon} size={20} color="#CCCCCC" style={styles.icon} />
         <BarVisualizer
@@ -81,7 +89,15 @@ export default function ControlBar({ style = {}, options }: ControlBarProps) {
           options.isCameraEnabled ? styles.enabledButton : undefined,
         ]}
         activeOpacity={0.7}
-        onPress={() => options.onCameraClick()}
+        onPress={async () => {
+          try {
+            const enabled = !options.isCameraEnabled;
+            await localParticipant.setCameraEnabled(enabled);
+            options.onCameraClick();
+          } catch (error) {
+            console.error("Error enabling camera:", error);
+          }
+        }}
       >
         <Ionicons name={cameraIcon} size={20} color="#CCCCCC" style={styles.icon} />
       </TouchableOpacity>
@@ -91,7 +107,15 @@ export default function ControlBar({ style = {}, options }: ControlBarProps) {
           options.isScreenShareEnabled ? styles.enabledButton : undefined,
         ]}
         activeOpacity={0.7}
-        onPress={() => options.onScreenShareClick()}
+        onPress={async () => {
+          try {
+            const enabled = !options.isScreenShareEnabled;
+            await localParticipant.setScreenShareEnabled(enabled);
+            options.onScreenShareClick();
+          } catch (error) {
+            console.error("Error enabling screen share:", error);
+          }
+        }}
       >
         <Ionicons name={screenShareIcon} size={20} color="#CCCCCC" style={styles.icon} />
       </TouchableOpacity>
@@ -110,7 +134,7 @@ export default function ControlBar({ style = {}, options }: ControlBarProps) {
         activeOpacity={0.7}
         onPress={() => options.onExitClick()}
       >
-        <Ionicons name={exitIcon} size={20} color="#CCCCCC" style={styles.icon} />
+        <Ionicons name={exitIcon} size={20} color="#FF3B30" style={styles.icon} />
       </TouchableOpacity>
     </View>
   );
