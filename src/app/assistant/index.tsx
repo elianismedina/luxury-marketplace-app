@@ -92,9 +92,11 @@ const RoomView = () => {
       : null;
 
   // Messages
-  const { messages, send } = useSessionMessagesSafe();
+  const { messages: rawMessages, send } = useSessionMessagesSafe();
   const [isChatEnabled, setChatEnabled] = useState(false);
   const [chatMessage, setChatMessage] = useState("");
+
+  const messages = rawMessages.map(msg => ({ from: msg.from?.identity || '', message: msg.message }));
 
   const onChatSend = useCallback(
     (message: string) => {
