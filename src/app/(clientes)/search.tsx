@@ -40,7 +40,7 @@ export default function SearchScreen() {
     onExitClick: () => disconnect(),
   };
 
-  console.log("About to render, platform:", Platform.OS);
+  
   return (
     <View style={{ flex: 1, padding: 16 }}>
       <AgentVisualization style={{ flex: 1 }} />

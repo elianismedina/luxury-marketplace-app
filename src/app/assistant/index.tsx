@@ -1,27 +1,9 @@
-import {
-  Animated,
-  Dimensions,
-  Platform,
-  StyleSheet,
-  useAnimatedValue,
-  View,
-  ViewStyle,
-} from "react-native";
-
 import { useConnection } from "@/hooks/useConnection";
 import {
   TrackReference,
   useSessionMessages,
   useTrackToggle,
 } from "@livekit/components-react";
-
-const useSessionMessagesSafe = () => {
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  return Platform.OS === 'web' ? useSessionMessages() : {
-    messages: [],
-    send: async () => {},
-  };
-};
 import {
   AudioSession,
   useIOSAudioManagement,
@@ -33,174 +15,29 @@ import {
 import { useRouter } from "expo-router";
 import { Track } from "livekit-client";
 import React, { useCallback, useEffect, useState } from "react";
+import {
+  Animated,
+  Dimensions,
+  Platform,
+  StyleSheet,
+  useAnimatedValue,
+  View,
+  ViewStyle,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AgentVisualization from "./ui/AgentVisualization";
 import ChatBar from "./ui/ChatBar";
 import ChatLog from "./ui/ChatLog";
 import ControlBar from "./ui/ControlBar";
 
-export default function AssistantScreen() {
-  // Start the audio session first.
-  useEffect(() => {
-    let start = async () => {
-      await AudioSession.startAudioSession();
-    };
-
-    start();
-    return () => {
-      AudioSession.stopAudioSession();
-    };
-  }, []);
-
-  return (
-    <SafeAreaView>
-      <RoomView />
-    </SafeAreaView>
-  );
-}
-
-const RoomView = () => {
-  const router = useRouter();
-  const connection = useConnection();
-  const room = useRoomContext();
-
-  useIOSAudioManagement(room, true);
-
-  const {
-    isMicrophoneEnabled,
-    isCameraEnabled,
-    isScreenShareEnabled,
-    cameraTrack: localCameraTrack,
-    localParticipant,
-  } = useLocalParticipant();
-  const localParticipantIdentity = localParticipant.identity;
-
-  const localScreenShareTrack = useParticipantTracks(
-    [Track.Source.ScreenShare],
-    localParticipantIdentity
-  );
-
-  const localVideoTrack =
-    localCameraTrack && isCameraEnabled
-      ? ({
-          participant: localParticipant,
-          publication: localCameraTrack,
-          source: Track.Source.Camera,
-        } satisfies TrackReference)
-      : localScreenShareTrack.length > 0 && isScreenShareEnabled
-      ? localScreenShareTrack[0]
-      : null;
-
-  // Messages
-  const { messages: rawMessages, send } = useSessionMessagesSafe();
-  const [isChatEnabled, setChatEnabled] = useState(false);
-  const [chatMessage, setChatMessage] = useState("");
-
-  const messages = rawMessages.map(msg => ({ from: msg.from?.identity || '', message: msg.message }));
-
-  const onChatSend = useCallback(
-    (message: string) => {
-      send(message);
-      setChatMessage("");
-    },
-    [send]
-  );
-
-  // Control callbacks
-  const micToggle = useTrackToggle({ source: Track.Source.Microphone });
-  const cameraToggle = useTrackToggle({ source: Track.Source.Camera });
-  const screenShareToggle = useTrackToggle({
-    source: Track.Source.ScreenShare,
-  });
-  const onChatClick = useCallback(() => {
-    setChatEnabled(!isChatEnabled);
-  }, [isChatEnabled, setChatEnabled]);
-  const onExitClick = useCallback(() => {
-    connection.disconnect();
-    router.back();
-  }, [connection, router]);
-
-  // Layout positioning
-  const [containerWidth, setContainerWidth] = useState(
-    Dimensions.get("window").width
-  );
-  const [containerHeight, setContainerHeight] = useState(
-    Dimensions.get("window").height
-  );
-  const agentVisualizationPosition = useAgentVisualizationPosition(
-    isChatEnabled,
-    isCameraEnabled || isScreenShareEnabled
-  );
-  const localVideoPosition = useLocalVideoPosition(isChatEnabled, {
-    width: containerWidth,
-    height: containerHeight,
-  });
-
-  let localVideoView = localVideoTrack ? (
-    <Animated.View
-      style={[
-        {
-          position: "absolute",
-          zIndex: 1,
-          ...localVideoPosition,
-        },
-      ]}
-    >
-      <VideoTrack trackRef={localVideoTrack} style={styles.video} />
-    </Animated.View>
-  ) : null;
-
-  return (
-    <View
-      style={styles.container}
-      onLayout={(event) => {
-        const { width, height } = event.nativeEvent.layout;
-        setContainerWidth(width);
-        setContainerHeight(height);
-      }}
-    >
-      <View style={styles.spacer} />
-      <ChatLog style={styles.logContainer} messages={messages} />
-      <ChatBar
-        style={styles.chatBar}
-        value={chatMessage}
-        onChangeText={(value) => {
-          setChatMessage(value);
-        }}
-        onChatSend={onChatSend}
-      />
-
-      <Animated.View
-        style={[
-          {
-            position: "absolute",
-            zIndex: 1,
-            backgroundColor: "#000000",
-            ...agentVisualizationPosition,
-          },
-        ]}
-      >
-        <AgentVisualization style={styles.agentVisualization} />
-      </Animated.View>
-
-      {localVideoView}
-
-      <ControlBar
-        style={styles.controlBar}
-        options={{
-          isMicEnabled: isMicrophoneEnabled,
-          isCameraEnabled,
-          isScreenShareEnabled,
-          isChatEnabled,
-          onMicClick: micToggle.toggle,
-          onCameraClick: cameraToggle.toggle,
-          onChatClick,
-          onScreenShareClick: screenShareToggle.toggle,
-          onExitClick,
-        }}
-      />
-    </View>
-  );
+const useSessionMessagesSafe = () => {
+  const hookResult = useSessionMessages();
+  return Platform.OS === "web"
+    ? hookResult
+    : {
+        messages: [],
+        send: async () => {},
+      };
 };
 
 const styles = StyleSheet.create({
@@ -414,3 +251,170 @@ const useLocalVideoPosition = (
     marginTop: 16,
   };
 };
+
+const RoomView = () => {
+  const router = useRouter();
+  const connection = useConnection();
+  const room = useRoomContext();
+
+  useIOSAudioManagement(room, true);
+
+  const {
+    isMicrophoneEnabled,
+    isCameraEnabled,
+    isScreenShareEnabled,
+    cameraTrack: localCameraTrack,
+    localParticipant,
+  } = useLocalParticipant();
+  const localParticipantIdentity = localParticipant.identity;
+
+  const localScreenShareTrack = useParticipantTracks(
+    [Track.Source.ScreenShare],
+    localParticipantIdentity
+  );
+
+  const localVideoTrack =
+    localCameraTrack && isCameraEnabled
+      ? ({
+          participant: localParticipant,
+          publication: localCameraTrack,
+          source: Track.Source.Camera,
+        } satisfies TrackReference)
+      : localScreenShareTrack.length > 0 && isScreenShareEnabled
+      ? localScreenShareTrack[0]
+      : null;
+
+  // Messages
+  const { messages: rawMessages, send } = useSessionMessagesSafe();
+  const [isChatEnabled, setChatEnabled] = useState(false);
+  const [chatMessage, setChatMessage] = useState("");
+
+  const messages = rawMessages.map((msg) => ({
+    from: msg.from?.identity || "",
+    message: msg.message,
+  }));
+
+  const onChatSend = useCallback(
+    (message: string) => {
+      send(message);
+      setChatMessage("");
+    },
+    [send]
+  );
+
+  // Control callbacks
+  const micToggle = useTrackToggle({ source: Track.Source.Microphone });
+  const cameraToggle = useTrackToggle({ source: Track.Source.Camera });
+  const screenShareToggle = useTrackToggle({
+    source: Track.Source.ScreenShare,
+  });
+  const onChatClick = useCallback(() => {
+    setChatEnabled(!isChatEnabled);
+  }, [isChatEnabled, setChatEnabled]);
+  const onExitClick = useCallback(() => {
+    connection.disconnect();
+    router.back();
+  }, [connection, router]);
+
+  // Layout positioning
+  const [containerWidth, setContainerWidth] = useState(
+    Dimensions.get("window").width
+  );
+  const [containerHeight, setContainerHeight] = useState(
+    Dimensions.get("window").height
+  );
+  const agentVisualizationPosition = useAgentVisualizationPosition(
+    isChatEnabled,
+    isCameraEnabled || isScreenShareEnabled
+  );
+  const localVideoPosition = useLocalVideoPosition(isChatEnabled, {
+    width: containerWidth,
+    height: containerHeight,
+  });
+
+  let localVideoView = localVideoTrack ? (
+    <Animated.View
+      style={[
+        {
+          position: "absolute",
+          zIndex: 1,
+          ...localVideoPosition,
+        },
+      ]}
+    >
+      <VideoTrack trackRef={localVideoTrack} style={styles.video} />
+    </Animated.View>
+  ) : null;
+
+  return (
+    <View
+      style={styles.container}
+      onLayout={(event) => {
+        const { width, height } = event.nativeEvent.layout;
+        setContainerWidth(width);
+        setContainerHeight(height);
+      }}
+    >
+      <View style={styles.spacer} />
+      <ChatLog style={styles.logContainer} messages={messages} />
+      <ChatBar
+        style={styles.chatBar}
+        value={chatMessage}
+        onChangeText={(value) => {
+          setChatMessage(value);
+        }}
+        onChatSend={onChatSend}
+      />
+
+      <Animated.View
+        style={[
+          {
+            position: "absolute",
+            zIndex: 1,
+            backgroundColor: "#000000",
+            ...agentVisualizationPosition,
+          },
+        ]}
+      >
+        <AgentVisualization style={styles.agentVisualization} />
+      </Animated.View>
+
+      {localVideoView}
+
+      <ControlBar
+        style={styles.controlBar}
+        options={{
+          isMicEnabled: isMicrophoneEnabled,
+          isCameraEnabled,
+          isScreenShareEnabled,
+          isChatEnabled,
+          onMicClick: micToggle.toggle,
+          onCameraClick: cameraToggle.toggle,
+          onChatClick,
+          onScreenShareClick: screenShareToggle.toggle,
+          onExitClick,
+        }}
+      />
+    </View>
+  );
+};
+
+export default function AssistantScreen() {
+  // Start the audio session first.
+  useEffect(() => {
+    let start = async () => {
+      await AudioSession.startAudioSession();
+    };
+
+    start();
+    return () => {
+      AudioSession.stopAudioSession();
+    };
+  }, []);
+
+  return (
+    <SafeAreaView>
+      <RoomView />
+    </SafeAreaView>
+  );
+}
