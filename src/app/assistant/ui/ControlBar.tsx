@@ -1,7 +1,8 @@
 import { TrackReference } from "@livekit/components-react";
-import { BarVisualizer, useLocalParticipant } from "@livekit/react-native";
+import { BarVisualizer, useLocalParticipant, useRoomContext } from "@livekit/react-native";
 import { useEffect, useState } from "react";
 import {
+  Platform,
   StyleProp,
   StyleSheet,
   TouchableOpacity,
@@ -29,6 +30,7 @@ type ControlBarOptions = {
 
 export default function ControlBar({ style = {}, options }: ControlBarProps) {
   const { microphoneTrack, localParticipant } = useLocalParticipant();
+  const room = useRoomContext();
   const [trackRef, setTrackRef] = useState<TrackReference | undefined>(
     undefined
   );
@@ -61,12 +63,14 @@ export default function ControlBar({ style = {}, options }: ControlBarProps) {
         ]}
         activeOpacity={0.7}
         onPress={async () => {
+          if ((room as any).connectionState !== 'connected') return;
           try {
             const enabled = !options.isMicEnabled;
             await localParticipant.setMicrophoneEnabled(enabled);
             options.onMicClick();
           } catch (error) {
             console.error("Error enabling microphone:", error);
+            // Don't change state if failed
           }
         }}
       >
@@ -90,35 +94,41 @@ export default function ControlBar({ style = {}, options }: ControlBarProps) {
         ]}
         activeOpacity={0.7}
         onPress={async () => {
+          if ((room as any).connectionState !== 'connected') return;
           try {
             const enabled = !options.isCameraEnabled;
             await localParticipant.setCameraEnabled(enabled);
             options.onCameraClick();
           } catch (error) {
             console.error("Error enabling camera:", error);
+            // Don't change state if failed
           }
         }}
       >
         <Ionicons name={cameraIcon} size={20} color="#CCCCCC" style={styles.icon} />
       </TouchableOpacity>
-      <TouchableOpacity
-        style={[
-          styles.button,
-          options.isScreenShareEnabled ? styles.enabledButton : undefined,
-        ]}
-        activeOpacity={0.7}
+      {Platform.OS === 'web' && (
+        <TouchableOpacity
+          style={[
+            styles.button,
+            options.isScreenShareEnabled ? styles.enabledButton : undefined,
+          ]}
+          activeOpacity={0.7}
         onPress={async () => {
+          if ((room as any).connectionState !== 'connected') return;
           try {
             const enabled = !options.isScreenShareEnabled;
             await localParticipant.setScreenShareEnabled(enabled);
             options.onScreenShareClick();
           } catch (error) {
             console.error("Error enabling screen share:", error);
+            // Don't change state if failed
           }
         }}
-      >
-        <Ionicons name={screenShareIcon} size={20} color="#CCCCCC" style={styles.icon} />
-      </TouchableOpacity>
+        >
+          <Ionicons name={screenShareIcon} size={20} color="#CCCCCC" style={styles.icon} />
+        </TouchableOpacity>
+      )}
       <TouchableOpacity
         style={[
           styles.button,

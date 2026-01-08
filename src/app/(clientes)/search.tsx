@@ -1,4 +1,4 @@
-import { View, Text, Platform, TouchableOpacity } from "react-native";
+import { View, Text, Platform, TouchableOpacity, ScrollView } from "react-native";
 import { useState, useEffect } from "react";
 import { useConnection } from "@/hooks/useConnection";
 import AgentVisualization from "@/app/assistant/ui/AgentVisualization";
@@ -14,6 +14,12 @@ export default function SearchScreen() {
   const [isCameraEnabled, setIsCameraEnabled] = useState(false);
   const [isScreenShareEnabled, setIsScreenShareEnabled] = useState(false);
   const [isChatEnabled, setIsChatEnabled] = useState(true);
+
+  useEffect(() => {
+    if (!isConnectionActive && isConfigured) {
+      connect();
+    }
+  }, [isConnectionActive, isConfigured, connect]);
 
   const handleChatSend = async (text: string) => {
     if (text.trim()) {
@@ -37,44 +43,15 @@ export default function SearchScreen() {
   console.log("About to render, platform:", Platform.OS);
   return (
     <View style={{ flex: 1, padding: 16 }}>
-      {!isConnectionActive ? (
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <Text style={{ fontSize: 18, marginBottom: 20 }}>AI Voice Assistant</Text>
-          <Text style={{ textAlign: 'center', marginBottom: 30 }}>
-            Connect to start a voice conversation with the AI agent
-          </Text>
-          <TouchableOpacity
-            onPress={() => {
-              console.log("Connect button pressed");
-              connect();
-            }}
-            disabled={!isConfigured}
-            style={{
-              backgroundColor: isConfigured ? '#007AFF' : '#CCC',
-              paddingHorizontal: 30,
-              paddingVertical: 15,
-              borderRadius: 8,
-              alignItems: 'center',
-            }}
-          >
-            <Text style={{ color: 'white', fontSize: 16 }}>
-              {isConfigured ? "Connect to Assistant" : "Assistant Not Configured"}
-            </Text>
-          </TouchableOpacity>
-        </View>
-      ) : (
-        <>
-          <AgentVisualization style={{ flex: 1 }} />
-          <ChatLog style={{ flex: 2 }} messages={messages} />
-          <ChatBar
-            style={{ marginBottom: 16 }}
-            value={chatValue}
-            onChangeText={setChatValue}
-            onChatSend={handleChatSend}
-          />
-          <ControlBar style={{ marginBottom: 16 }} options={controlBarOptions} />
-        </>
-      )}
+      <AgentVisualization style={{ flex: 1 }} />
+      <ChatLog style={{ flex: 2 }} messages={messages} />
+      <ChatBar
+        style={{ marginBottom: 16 }}
+        value={chatValue}
+        onChangeText={setChatValue}
+        onChatSend={handleChatSend}
+      />
+      <ControlBar style={{ marginBottom: 16 }} options={controlBarOptions} />
     </View>
   );
 }
