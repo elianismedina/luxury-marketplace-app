@@ -12,8 +12,7 @@ import {
   useRoomContext,
   VideoTrack,
 } from "@livekit/react-native";
-import { useRouter } from "expo-router";
-import { Track } from "livekit-client";
+import { ConnectionState, Track } from "livekit-client";
 import React, { useCallback, useEffect, useState } from "react";
 import {
   Animated,
@@ -24,6 +23,7 @@ import {
   View,
   ViewStyle,
 } from "react-native";
+
 import { SafeAreaView } from "react-native-safe-area-context";
 import AgentVisualization from "./ui/AgentVisualization";
 import ChatBar from "./ui/ChatBar";
@@ -253,7 +253,6 @@ const useLocalVideoPosition = (
 };
 
 const RoomView = () => {
-  const router = useRouter();
   const connection = useConnection();
   const room = useRoomContext();
 
@@ -296,10 +295,10 @@ const RoomView = () => {
 
   const onChatSend = useCallback(
     (message: string) => {
-      send(message);
+      connection.sendMessage(message);
       setChatMessage("");
     },
-    [send]
+    [connection]
   );
 
   // Control callbacks
@@ -312,9 +311,12 @@ const RoomView = () => {
     setChatEnabled(!isChatEnabled);
   }, [isChatEnabled, setChatEnabled]);
   const onExitClick = useCallback(() => {
-    connection.disconnect();
-    router.back();
-  }, [connection, router]);
+    if (room.state === ConnectionState.Connected) {
+      connection.disconnect();
+    } else {
+      connection.connect();
+    }
+  }, [room.state, connection]);
 
   // Layout positioning
   const [containerWidth, setContainerWidth] = useState(
@@ -388,6 +390,7 @@ const RoomView = () => {
           isCameraEnabled,
           isScreenShareEnabled,
           isChatEnabled,
+          isConnected: room.state === ConnectionState.Connected,
           onMicClick: micToggle.toggle,
           onCameraClick: cameraToggle.toggle,
           onChatClick,

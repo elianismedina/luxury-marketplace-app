@@ -1,6 +1,3 @@
-import {
-  FlatList,
-} from "react-native";
 import { useLocalParticipant } from "@livekit/react-native";
 import { useCallback } from "react";
 import {

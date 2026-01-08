@@ -1,10 +1,10 @@
-import { Room } from "livekit-client";
+import { AudioModule } from "expo-audio";
+import { ConnectionState, Room } from "livekit-client";
 import { TokenSource } from "livekit-client";
 import { SessionProvider } from "@livekit/components-react";
 import { registerGlobals } from "@livekit/react-native-webrtc";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { Platform } from "react-native";
-import { requestRecordingPermissionsAsync } from "expo-audio";
 
 // TODO: Add your Sandbox ID here
 const sandboxID = process.env.EXPO_PUBLIC_LIVEKIT_SANDBOX_ID || "";
@@ -53,7 +53,7 @@ async function requestMicPermission() {
     // On web, check if mediaDevices is available
     if (typeof navigator !== "undefined" && navigator.mediaDevices) {
       try {
-        const { granted } = await requestRecordingPermissionsAsync();
+        const { granted } = await AudioModule.requestRecordingPermissionsAsync();
         return granted;
       } catch (error) {
         console.warn("Failed to request mic permission on web:", error);
@@ -65,7 +65,7 @@ async function requestMicPermission() {
     }
   }
   try {
-    const { granted } = await requestRecordingPermissionsAsync();
+    const { granted } = await AudioModule.requestRecordingPermissionsAsync();
     return granted;
   } catch (error) {
     console.warn("Failed to request mic permission:", error);
@@ -97,16 +97,13 @@ export function ConnectionProvider({ children }: ConnectionProviderProps) {
     registerGlobals();
   }, []);
 
-  const [isConnectionActive, setIsConnectionActive] = useState(false);
   const [messages, setMessages] = useState<Array<{from: string, message: string}>>([]);
   const room = useMemo(() => {
     const r = new Room();
     r.on('connected', () => {
-      setIsConnectionActive(true);
       console.log("Successfully connected to LiveKit");
     });
     r.on('disconnected', () => {
-      setIsConnectionActive(false);
       console.log("Disconnected from LiveKit");
     });
     r.on('dataReceived', (payload, participant, kind) => {
@@ -115,6 +112,8 @@ export function ConnectionProvider({ children }: ConnectionProviderProps) {
     });
     return r;
   }, []);
+
+  const isConnectionActive = room.state === ConnectionState.Connected;
 
   const isConfigured =
     !!sandboxID ||
@@ -151,6 +150,7 @@ export function ConnectionProvider({ children }: ConnectionProviderProps) {
   const connect = useCallback(async () => {
     console.log("Connect function called, isConfigured:", isConfigured);
     if (!isConfigured) return;
+    if ((room as any).state !== ConnectionState.Disconnected) return;
 
     const granted = await requestMicPermission();
     console.log("Microphone permission granted:", granted);
@@ -199,7 +199,6 @@ export function ConnectionProvider({ children }: ConnectionProviderProps) {
 
   const disconnect = useCallback(() => {
     room.disconnect();
-    setIsConnectionActive(false);
   }, [room]);
 
   const mockSession = useMemo(() => ({
@@ -216,8 +215,10 @@ export function ConnectionProvider({ children }: ConnectionProviderProps) {
   }), [room, connect, disconnect]);
 
   const sendMessage = useCallback((message: string) => {
-    room.localParticipant?.publishData(new TextEncoder().encode(message), { topic: 'chat' });
-  }, [room]);
+    if (isConnectionActive) {
+      room.localParticipant?.publishData(new TextEncoder().encode(message), { topic: 'chat' });
+    }
+  }, [room, isConnectionActive]);
 
   const value = useMemo(() => ({
     isConnectionActive,

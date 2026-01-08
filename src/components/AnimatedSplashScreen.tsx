@@ -14,9 +14,7 @@ export const AnimatedSplashScreen: React.FC<AnimatedSplashScreenProps> = ({
   triggerAnimation = true,
 }) => {
   const [fadeAnim] = useState(new Animated.Value(1));
-  const player = useAudioPlayer(
-    require("../../assets/audio/LamborginiSound.mp4")
-  );
+  const player = useAudioPlayer(require("../../assets/audio/LamborginiSound.mp4"));
 
   useEffect(() => {
     if (!triggerAnimation) return;

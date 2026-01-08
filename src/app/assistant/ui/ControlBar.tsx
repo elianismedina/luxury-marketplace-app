@@ -1,5 +1,5 @@
 import { TrackReference } from "@livekit/components-react";
-import { BarVisualizer, useLocalParticipant, useRoomContext } from "@livekit/react-native";
+import { BarVisualizer, useLocalParticipant } from "@livekit/react-native";
 import { useEffect, useState } from "react";
 import {
   Platform,
@@ -25,12 +25,12 @@ type ControlBarOptions = {
   onScreenShareClick: () => void;
   isChatEnabled: boolean;
   onChatClick: () => void;
+  isConnected: boolean;
   onExitClick: () => void;
 };
 
 export default function ControlBar({ style = {}, options }: ControlBarProps) {
   const { microphoneTrack, localParticipant } = useLocalParticipant();
-  const room = useRoomContext();
   const [trackRef, setTrackRef] = useState<TrackReference | undefined>(
     undefined
   );
@@ -63,14 +63,10 @@ export default function ControlBar({ style = {}, options }: ControlBarProps) {
         ]}
         activeOpacity={0.7}
         onPress={async () => {
-          if ((room as any).connectionState !== 'connected') return;
           try {
-            const enabled = !options.isMicEnabled;
-            await localParticipant.setMicrophoneEnabled(enabled);
-            options.onMicClick();
+            await options.onMicClick();
           } catch (error) {
-            console.error("Error enabling microphone:", error);
-            // Don't change state if failed
+            console.error("Error toggling microphone:", error);
           }
         }}
       >
@@ -94,14 +90,10 @@ export default function ControlBar({ style = {}, options }: ControlBarProps) {
         ]}
         activeOpacity={0.7}
         onPress={async () => {
-          if ((room as any).connectionState !== 'connected') return;
           try {
-            const enabled = !options.isCameraEnabled;
-            await localParticipant.setCameraEnabled(enabled);
-            options.onCameraClick();
+            await options.onCameraClick();
           } catch (error) {
-            console.error("Error enabling camera:", error);
-            // Don't change state if failed
+            console.error("Error toggling camera:", error);
           }
         }}
       >
@@ -115,14 +107,10 @@ export default function ControlBar({ style = {}, options }: ControlBarProps) {
           ]}
           activeOpacity={0.7}
         onPress={async () => {
-          if ((room as any).connectionState !== 'connected') return;
           try {
-            const enabled = !options.isScreenShareEnabled;
-            await localParticipant.setScreenShareEnabled(enabled);
-            options.onScreenShareClick();
+            await options.onScreenShareClick();
           } catch (error) {
-            console.error("Error enabling screen share:", error);
-            // Don't change state if failed
+            console.error("Error toggling screen share:", error);
           }
         }}
         >
@@ -139,13 +127,13 @@ export default function ControlBar({ style = {}, options }: ControlBarProps) {
       >
         <Ionicons name={chatIcon} size={20} color="#CCCCCC" style={styles.icon} />
       </TouchableOpacity>
-      <TouchableOpacity
-        style={styles.button}
-        activeOpacity={0.7}
-        onPress={() => options.onExitClick()}
-      >
-        <Ionicons name={exitIcon} size={20} color="#FF3B30" style={styles.icon} />
-      </TouchableOpacity>
+       <TouchableOpacity
+         style={styles.button}
+         activeOpacity={0.7}
+         onPress={() => options.onExitClick()}
+       >
+         <Ionicons name={exitIcon} size={20} color={options.isConnected ? "#FF3B30" : "#34C759"} style={styles.icon} />
+       </TouchableOpacity>
     </View>
   );
 }

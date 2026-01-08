@@ -15,14 +15,10 @@ export default function SearchScreen() {
   const [isScreenShareEnabled, setIsScreenShareEnabled] = useState(false);
   const [isChatEnabled, setIsChatEnabled] = useState(true);
 
-  useEffect(() => {
-    if (!isConnectionActive && isConfigured) {
-      connect();
-    }
-  }, [isConnectionActive, isConfigured, connect]);
+
 
   const handleChatSend = async (text: string) => {
-    if (text.trim()) {
+    if (text.trim() && isConnectionActive) {
       await sendMessage(text.trim());
     }
     setChatValue("");
@@ -37,7 +33,20 @@ export default function SearchScreen() {
     onScreenShareClick: () => setIsScreenShareEnabled(!isScreenShareEnabled),
     isChatEnabled,
     onChatClick: () => setIsChatEnabled(!isChatEnabled),
-    onExitClick: () => disconnect(),
+    isConnected: isConnectionActive,
+    onExitClick: async () => {
+
+      if (isConnectionActive) {
+
+        disconnect();
+
+      } else {
+
+        connect();
+
+      }
+
+    },
   };
 
   

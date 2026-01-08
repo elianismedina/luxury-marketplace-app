@@ -25,4 +25,15 @@ if (typeof global.TextEncoder === "undefined") {
   const { TextEncoder } = require("text-encoding");
   global.TextEncoder = TextEncoder;
 }
+
+// 4️⃣ Event polyfill for LiveKit
+if (typeof global.Event === "undefined") {
+  global.Event = class Event {
+    type: string;
+    constructor(type: string) {
+      this.type = type;
+    }
+  } as any;
+}
+
 registerGlobals();
